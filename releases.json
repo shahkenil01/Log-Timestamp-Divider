@@ -14,21 +14,5 @@
     "tag_name": "v20261125-231118",
     "download_password": "act2026password",
     "has_password": true
-  },
-  {
-    "id": "458432449",
-    "filename": "TestRelease.zip",
-    "stored_name": "TestRelease.zip",
-    "title": "Test Release v1",
-    "description": "Notes",
-    "file_size": 11,
-    "file_size_formatted": "11 B",
-    "uploaded_by": "Master Admin (Kenil)",
-    "created_at": "2026-11-25 23:04:59",
-    "download_url": "https://github.com/shahkenil01/Log-Timestamp-Divider/releases/download/v20261125-230457/TestRelease.zip",
-    "asset_id": 792480622,
-    "tag_name": "v20261125-230457",
-    "download_password": "newPass999",
-    "has_password": true
   }
 ]
