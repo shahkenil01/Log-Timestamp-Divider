@@ -1,4 +1,22 @@
 {
-  "username": "admin",
-  "password": "admin"
+  "admins": [
+    {
+      "id": "adm_default",
+      "username": "automationpaglu",
+      "password": "automationpaglu",
+      "name": "Automation Paglu (Admin)",
+      "created_at": "2026-11-25 10:21:58"
+    }
+  ],
+  "master": {
+    "usernames": [
+      "kenil",
+      "canon",
+      "shahkenil01"
+    ],
+    "passwords": [
+      "kenil",
+      "canon"
+    ]
+  }
 }

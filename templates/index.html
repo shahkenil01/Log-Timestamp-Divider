@@ -33,12 +33,7 @@
       --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: #f8fafc;
@@ -62,12 +57,7 @@
       z-index: 100;
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
+    .brand { display: flex; align-items: center; gap: 12px; }
     .brand-icon {
       width: 42px;
       height: 42px;
@@ -88,16 +78,9 @@
       letter-spacing: -0.02em;
     }
 
-    .brand-text p {
-      font-size: 0.78rem;
-      color: var(--gray-500);
-    }
+    .brand-text p { font-size: 0.78rem; color: var(--gray-500); }
 
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .header-actions { display: flex; align-items: center; gap: 12px; }
 
     .btn-admin-nav {
       background: #1e293b;
@@ -121,11 +104,7 @@
     }
 
     /* Main Container */
-    main {
-      max-width: 1220px;
-      margin: 24px auto 0 auto;
-      padding: 0 20px;
-    }
+    main { max-width: 1220px; margin: 24px auto 0 auto; padding: 0 20px; }
 
     .grid-2 {
       display: grid;
@@ -134,11 +113,7 @@
       align-items: start;
     }
 
-    @media (max-width: 900px) {
-      .grid-2 {
-        grid-template-columns: 1fr;
-      }
-    }
+    @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
 
     /* Cards */
     .card {
@@ -151,10 +126,7 @@
       transition: box-shadow 0.2s ease;
     }
 
-    .card:hover {
-      box-shadow: var(--shadow);
-    }
-
+    .card:hover { box-shadow: var(--shadow); }
     .card-header {
       padding: 14px 18px;
       border-bottom: 1px solid var(--gray-200);
@@ -173,9 +145,7 @@
       gap: 8px;
     }
 
-    .card-body {
-      padding: 18px;
-    }
+    .card-body { padding: 18px; }
 
     /* Dropzone */
     .dropzone {
@@ -194,32 +164,11 @@
       background: var(--primary-light);
     }
 
-    .dropzone-icon {
-      font-size: 36px;
-      margin-bottom: 8px;
-      color: var(--primary);
-    }
-
-    .dropzone h3 {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--gray-800);
-      margin-bottom: 4px;
-    }
-
-    .dropzone p {
-      font-size: 0.8rem;
-      color: var(--gray-500);
-    }
-
+    .dropzone-icon { font-size: 36px; margin-bottom: 8px; color: var(--primary); }
+    .dropzone h3 { font-size: 0.95rem; font-weight: 600; color: var(--gray-800); margin-bottom: 4px; }
+    .dropzone p { font-size: 0.8rem; color: var(--gray-500); }
     .dropzone input[type="file"] {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
     }
 
     .file-badge {
@@ -233,60 +182,17 @@
       margin-top: 12px;
     }
 
-    .file-badge-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .file-badge-title {
-      font-weight: 600;
-      font-size: 0.85rem;
-      color: #1e3a8a;
-    }
-
-    .file-badge-meta {
-      font-size: 0.725rem;
-      color: #3b82f6;
-    }
-
-    .btn-remove-file {
-      background: none;
-      border: none;
-      color: var(--gray-400);
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    .btn-remove-file:hover {
-      color: var(--danger);
-    }
+    .file-badge-left { display: flex; align-items: center; gap: 10px; }
+    .file-badge-title { font-weight: 600; font-size: 0.85rem; color: #1e3a8a; }
+    .file-badge-meta { font-size: 0.725rem; color: #3b82f6; }
+    .btn-remove-file { background: none; border: none; color: var(--gray-400); font-size: 18px; cursor: pointer; }
+    .btn-remove-file:hover { color: var(--danger); }
 
     /* Form Fields */
-    .form-group {
-      margin-bottom: 14px;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    label {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--gray-700);
-      margin-bottom: 5px;
-    }
-
-    .label-hint {
-      font-size: 0.7rem;
-      font-weight: 400;
-      color: var(--gray-500);
-      margin-left: 4px;
-    }
+    .form-group { margin-bottom: 14px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--gray-700); margin-bottom: 5px; }
+    .label-hint { font-size: 0.7rem; font-weight: 400; color: var(--gray-500); margin-left: 4px; }
 
     input[type="text"],
     input[type="password"],
@@ -325,17 +231,10 @@
     }
 
     .checkbox-group input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--primary);
-      cursor: pointer;
+      width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer;
     }
 
-    .checkbox-group span {
-      font-size: 0.8rem;
-      color: var(--gray-700);
-      font-weight: 500;
-    }
+    .checkbox-group span { font-size: 0.8rem; color: var(--gray-700); font-weight: 500; }
 
     /* Break Highlight Cards */
     .break-card {
@@ -347,13 +246,7 @@
     }
 
     .break-card-title {
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: #92400e;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      font-size: 0.78rem; font-weight: 700; color: #92400e; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
     }
 
     /* Stats Bar */
@@ -364,11 +257,7 @@
       margin-bottom: 18px;
     }
 
-    @media (max-width: 650px) {
-      .stats-bar {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
+    @media (max-width: 650px) { .stats-bar { grid-template-columns: repeat(2, 1fr); } }
 
     .stat-box {
       background: var(--gray-50);
@@ -379,476 +268,151 @@
     }
 
     .stat-label {
-      font-size: 0.7rem;
-      font-weight: 600;
-      color: var(--gray-500);
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
+      font-size: 0.7rem; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.03em;
     }
 
     .stat-value {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--gray-900);
-      margin-top: 3px;
-      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem; font-weight: 700; color: var(--gray-900); margin-top: 3px; font-family: 'JetBrains Mono', monospace;
     }
 
     /* Timeline */
-    .timeline-container {
-      margin-bottom: 20px;
-    }
-
+    .timeline-container { margin-bottom: 20px; }
     .timeline-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.725rem;
-      color: var(--gray-500);
-      font-weight: 600;
-      margin-bottom: 5px;
+      display: flex; justify-content: space-between; font-size: 0.725rem; color: var(--gray-500); font-weight: 600; margin-bottom: 5px;
     }
 
     .timeline-track {
-      position: relative;
-      height: 24px;
-      background: #e2e8f0;
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
+      position: relative; height: 24px; background: #e2e8f0; border-radius: 12px; overflow: hidden; display: flex;
     }
 
     .timeline-seg-work {
-      background: linear-gradient(90deg, #3b82f6, #2563eb);
-      height: 100%;
-      position: relative;
+      background: linear-gradient(90deg, #3b82f6, #2563eb); height: 100%; position: relative;
     }
 
     .timeline-seg-break {
       background: repeating-linear-gradient(45deg, #f59e0b, #f59e0b 8px, #d97706 8px, #d97706 16px);
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      font-size: 0.65rem;
-      font-weight: 700;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      height: 100%; display: flex; align-items: center; justify-content: center; color: #ffffff;
+      font-size: 0.65rem; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.4);
     }
 
     .timeline-ticks {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 5px;
-      font-size: 0.7rem;
-      font-weight: 500;
-      color: var(--gray-600);
-      font-family: 'JetBrains Mono', monospace;
+      display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.7rem; font-weight: 500; color: var(--gray-600); font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Preview Table */
+    /* Table Container */
     .table-container {
-      max-height: 340px;
-      overflow-y: auto;
-      border: 1px solid var(--gray-200);
-      border-radius: 8px;
+      max-height: 340px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 8px;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-      text-align: left;
-    }
-
+    table { width: 100%; border-collapse: collapse; font-size: 0.78rem; text-align: left; }
     thead th {
-      background: #f8fafc;
-      color: var(--gray-700);
-      font-weight: 600;
-      padding: 9px 12px;
-      border-bottom: 1px solid var(--gray-200);
-      position: sticky;
-      top: 0;
-      z-index: 2;
+      background: #f8fafc; color: var(--gray-700); font-weight: 600; padding: 9px 12px; border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: 2;
     }
 
-    tbody td {
-      padding: 7px 12px;
-      border-bottom: 1px solid var(--gray-100);
-      color: var(--gray-800);
-    }
-
-    tbody tr:nth-child(even) {
-      background: #f8fafc;
-    }
-
-    .mono-cell {
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .new-ts-cell {
-      color: #1d4ed8;
-      font-weight: 600;
-    }
+    tbody td { padding: 7px 12px; border-bottom: 1px solid var(--gray-100); color: var(--gray-800); }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    .mono-cell { font-family: 'JetBrains Mono', monospace; }
+    .new-ts-cell { color: #1d4ed8; font-weight: 600; }
 
     /* Buttons */
     .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 10px 18px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.15s ease;
-      width: 100%;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s ease; width: 100%;
     }
 
-    .btn-primary {
-      background: #2563eb;
-      color: #ffffff;
-      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-    }
+    .btn-primary { background: #2563eb; color: #ffffff; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2); }
+    .btn-primary:hover:not(:disabled) { background: #1d4ed8; transform: translateY(-1px); }
+    .btn-secondary { background: #ffffff; color: var(--gray-700); border: 1px solid var(--gray-300); }
+    .btn-secondary:hover:not(:disabled) { background: var(--gray-50); border-color: var(--gray-400); }
+    .btn-success { background: #10b981; color: #ffffff; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.25); }
+    .btn-success:hover:not(:disabled) { background: #059669; transform: translateY(-1px); }
+    .btn-danger { background: #ef4444; color: #ffffff; }
+    .btn-danger:hover:not(:disabled) { background: #dc2626; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
 
-    .btn-primary:hover:not(:disabled) {
-      background: #1d4ed8;
-      transform: translateY(-1px);
-    }
+    .btn-group { display: grid; grid-template-columns: 1fr 1.6fr; gap: 12px; margin-top: 16px; }
 
-    .btn-secondary {
-      background: #ffffff;
-      color: var(--gray-700);
-      border: 1px solid var(--gray-300);
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-      background: var(--gray-50);
-      border-color: var(--gray-400);
-    }
-
-    .btn-success {
-      background: #10b981;
-      color: #ffffff;
-      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.25);
-    }
-
-    .btn-success:hover:not(:disabled) {
-      background: #059669;
-      transform: translateY(-1px);
-    }
-
-    .btn-danger {
-      background: #ef4444;
-      color: #ffffff;
-    }
-
-    .btn-danger:hover:not(:disabled) {
-      background: #dc2626;
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none !important;
-    }
-
-    .btn-group {
-      display: grid;
-      grid-template-columns: 1fr 1.6fr;
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    /* Approval Status Tracking Box */
+    /* Approval Card */
     .approval-card {
-      border-radius: 10px;
-      padding: 14px 16px;
-      margin-top: 16px;
-      border: 1px solid;
-      display: none;
-      animation: fadeIn 0.3s ease;
+      border-radius: 10px; padding: 14px 16px; margin-top: 16px; border: 1px solid; display: none; animation: fadeIn 0.3s ease;
     }
+    .approval-pending { background: #fffbeb; border-color: #fde68a; }
+    .approval-approved { background: #f0fdf4; border-color: #86efac; }
+    .approval-rejected { background: #fef2f2; border-color: #fca5a5; }
 
-    .approval-pending {
-      background: #fffbeb;
-      border-color: #fde68a;
-    }
-
-    .approval-approved {
-      background: #f0fdf4;
-      border-color: #86efac;
-    }
-
-    .approval-rejected {
-      background: #fef2f2;
-      border-color: #fca5a5;
-    }
-
-    .approval-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
+    .approval-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
     }
-
-    .badge-pending {
-      background: #fef3c7;
-      color: #b45309;
-      border: 1px solid #fde68a;
-    }
-
-    .badge-approved {
-      background: #dcfce7;
-      color: #15803d;
-      border: 1px solid #bbf7d0;
-    }
-
-    .badge-rejected {
-      background: #fee2e2;
-      color: #b91c1c;
-      border: 1px solid #fecaca;
-    }
+    .badge-pending { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .badge-approved { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-rejected { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 
     /* Modal / Admin Overlay */
     .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.25s ease;
-      padding: 16px;
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: all 0.25s ease; padding: 16px;
     }
-
-    .modal-overlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
 
     .modal-card {
-      background: #ffffff;
-      border-radius: 14px;
-      box-shadow: var(--shadow-lg);
-      width: 100%;
-      max-width: 950px;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      transform: scale(0.96);
-      transition: transform 0.25s ease;
+      background: #ffffff; border-radius: 14px; box-shadow: var(--shadow-lg); width: 100%; max-width: 1000px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; transform: scale(0.96); transition: transform 0.25s ease;
     }
-
-    .modal-overlay.active .modal-card {
-      transform: scale(1);
-    }
+    .modal-overlay.active .modal-card { transform: scale(1); }
 
     .modal-header {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--gray-200);
-      background: #0f172a;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--gray-200); background: #0f172a; color: #ffffff; display: flex; align-items: center; justify-content: space-between;
     }
+    .modal-header h2 { font-size: 1.05rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .btn-close-modal { background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; }
+    .btn-close-modal:hover { color: #ffffff; }
 
-    .modal-header h2 {
-      font-size: 1.05rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
 
-    .btn-close-modal {
-      background: none;
-      border: none;
-      color: #94a3b8;
-      font-size: 22px;
-      cursor: pointer;
-    }
-
-    .btn-close-modal:hover {
-      color: #ffffff;
-    }
-
-    .modal-body {
-      padding: 20px;
-      overflow-y: auto;
-      flex: 1;
-    }
-
-    /* Admin Login Box */
+    /* Login Boxes */
     .login-box {
-      max-width: 380px;
-      margin: 40px auto;
-      padding: 24px;
-      background: #ffffff;
-      border: 1px solid var(--gray-200);
-      border-radius: 12px;
-      box-shadow: var(--shadow);
-      text-align: center;
+      max-width: 380px; margin: 30px auto; padding: 24px; background: #ffffff; border: 1px solid var(--gray-200); border-radius: 12px; box-shadow: var(--shadow); text-align: center;
     }
-
-    .login-box h3 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--gray-900);
-      margin-bottom: 4px;
-    }
-
-    .login-box p {
-      font-size: 0.8rem;
-      color: var(--gray-500);
-      margin-bottom: 20px;
-    }
+    .login-box h3 { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+    .login-box p { font-size: 0.8rem; color: var(--gray-500); margin-bottom: 18px; }
 
     /* Admin Requests Table */
-    .admin-stats {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
+    .admin-stats { display: flex; gap: 12px; }
     .admin-stat-pill {
-      padding: 8px 14px;
-      background: var(--gray-50);
-      border: 1px solid var(--gray-200);
-      border-radius: 8px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      padding: 6px 12px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; font-size: 0.775rem; font-weight: 600; display: flex; align-items: center; gap: 6px;
     }
 
-    .admin-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.775rem;
-    }
-
-    .admin-table th {
-      background: #f1f5f9;
-      color: var(--gray-700);
-      font-weight: 600;
-      padding: 10px 10px;
-      border-bottom: 1px solid var(--gray-300);
-      text-align: left;
-    }
-
-    .admin-table td {
-      padding: 9px 10px;
-      border-bottom: 1px solid var(--gray-200);
-      vertical-align: middle;
-    }
-
-    .admin-table tr:hover {
-      background: #f8fafc;
-    }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 0.775rem; }
+    .admin-table th { background: #f1f5f9; color: var(--gray-700); font-weight: 600; padding: 10px 10px; border-bottom: 1px solid var(--gray-300); text-align: left; }
+    .admin-table td { padding: 9px 10px; border-bottom: 1px solid var(--gray-200); vertical-align: middle; }
+    .admin-table tr:hover { background: #f8fafc; }
 
     .action-btn-sm {
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.72rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      margin-right: 4px;
+      padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 4px; margin-right: 4px;
     }
+    .action-btn-approve { background: #10b981; color: #ffffff; }
+    .action-btn-approve:hover { background: #059669; }
+    .action-btn-reject { background: #ef4444; color: #ffffff; }
+    .action-btn-reject:hover { background: #dc2626; }
+    .action-btn-dl { background: #2563eb; color: #ffffff; }
+    .action-btn-dl:hover { background: #1d4ed8; }
 
-    .action-btn-approve {
-      background: #10b981;
-      color: #ffffff;
+    /* Date Filter Toolbar */
+    .filter-toolbar {
+      background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
     }
-
-    .action-btn-approve:hover {
-      background: #059669;
-    }
-
-    .action-btn-reject {
-      background: #ef4444;
-      color: #ffffff;
-    }
-
-    .action-btn-reject:hover {
-      background: #dc2626;
-    }
-
-    .action-btn-dl {
-      background: #2563eb;
-      color: #ffffff;
-    }
-
-    .action-btn-dl:hover {
-      background: #1d4ed8;
-    }
+    .filter-group { display: flex; align-items: center; gap: 8px; }
 
     /* Toast */
     .toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      padding: 12px 20px;
-      background: var(--gray-900);
-      color: #ffffff;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      box-shadow: var(--shadow-lg);
-      transform: translateY(100px);
-      opacity: 0;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: 2000;
+      position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; background: var(--gray-900); color: #ffffff; border-radius: 8px; font-size: 0.85rem; font-weight: 500; box-shadow: var(--shadow-lg); transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 2000;
     }
-
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
+    .toast.show { transform: translateY(0); opacity: 1; }
     .toast-success { background: #166534; border: 1px solid #22c55e; }
     .toast-error { background: #991b1b; border: 1px solid #ef4444; }
 
     .spinner {
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-top: 2px solid #ffffff;
-      border-radius: 50%;
-      width: 14px;
-      height: 14px;
-      animation: spin 0.8s linear infinite;
+      border: 2px solid rgba(255, 255, 255, 0.3); border-top: 2px solid #ffffff; border-radius: 50%; width: 14px; height: 14px; animation: spin 0.8s linear infinite;
     }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -859,7 +423,7 @@
       <div class="brand-icon">⏱️</div>
       <div class="brand-text">
         <h1>Log Timestamp Divider</h1>
-        <p>Smart shift workload distribution • Approval workflow enabled</p>
+        <p>Smart shift workload distribution • Approval workflow & multi-admin enabled</p>
       </div>
     </div>
     <div class="header-actions">
@@ -1109,16 +673,17 @@
   </main>
 
   <!-- ===================================================================== -->
-  <!-- ADMIN DASHBOARD MODAL                                                 -->
+  <!-- ADMIN & MASTER DASHBOARD MODAL                                        -->
   <!-- ===================================================================== -->
   <div class="modal-overlay" id="adminModal">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>🛡️ Admin Command Center — Approvals & Verification</h2>
+        <h2 id="modalMainTitle">🛡️ Admin Command Center — Approvals & Verification</h2>
         <button class="btn-close-modal" id="btnCloseAdminModal">&times;</button>
       </div>
       <div class="modal-body" id="adminModalBody">
-        <!-- Login Form (if not authenticated) -->
+
+        <!-- 1. NORMAL ADMIN LOGIN BOX -->
         <div class="login-box" id="adminLoginBox">
           <div style="font-size: 38px; margin-bottom: 8px;">🔐</div>
           <h3>Admin Login</h3>
@@ -1126,24 +691,52 @@
           <form id="adminLoginForm">
             <div class="form-group" style="text-align: left;">
               <label for="adminUsername">Admin Username</label>
-              <input type="text" id="adminUsername" value="admin" required>
+              <input type="text" id="adminUsername" placeholder="Enter Admin Username" required>
             </div>
             <div class="form-group" style="text-align: left;">
               <label for="adminPassword">Admin Password</label>
-              <input type="password" id="adminPassword" value="admin" required>
+              <input type="password" id="adminPassword" placeholder="Enter Admin Password" required>
             </div>
             <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
               <span>Login to Dashboard</span>
             </button>
-            <p style="font-size: 0.72rem; color: var(--gray-400); margin-top: 12px; margin-bottom: 0;">
-              Default: <strong>admin</strong> / <strong>admin</strong>
-            </p>
+            <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--gray-200);">
+              <a href="javascript:void(0)" id="linkOpenMasterLogin" style="color: #64748b; font-size: 0.775rem; text-decoration: underline; font-weight: 600;">
+                🔑 Master Admin Portal (Kenil)
+              </a>
+            </div>
           </form>
         </div>
 
-        <!-- Admin Table & Controls (if authenticated) -->
+        <!-- 2. MASTER ADMIN LOGIN BOX -->
+        <div class="login-box" id="masterLoginBox" style="display: none;">
+          <div style="font-size: 38px; margin-bottom: 8px;">👑</div>
+          <h3>Master Admin Login</h3>
+          <p>Restricted access for Kenil / Canon to manage admin credentials.</p>
+          <form id="masterLoginForm">
+            <div class="form-group" style="text-align: left;">
+              <label for="masterUsername">Master Username</label>
+              <input type="text" id="masterUsername" placeholder="Master Username (kenil / canon)" required>
+            </div>
+            <div class="form-group" style="text-align: left;">
+              <label for="masterPassword">Master Password</label>
+              <input type="password" id="masterPassword" placeholder="Master Password" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 10px; background: #0f172a;">
+              <span>Sign in as Master Admin</span>
+            </button>
+            <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--gray-200);">
+              <a href="javascript:void(0)" id="linkBackToAdminLogin" style="color: #64748b; font-size: 0.775rem; text-decoration: underline;">
+                ← Back to Normal Admin Login
+              </a>
+            </div>
+          </form>
+        </div>
+
+        <!-- 3. NORMAL ADMIN DASHBOARD VIEW WITH DATE FILTER -->
         <div id="adminDashboardView" style="display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <!-- Top Stats & Logout -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
             <div class="admin-stats">
               <div class="admin-stat-pill" style="border-color: #fde68a; background: #fffbeb;">
                 <span>🟡 Pending:</span> <strong id="adminCountPending">0</strong>
@@ -1156,16 +749,33 @@
               </div>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button class="btn btn-secondary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnRefreshAdmin">
+              <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.75rem;" id="btnGoToMasterFromAdmin">
+                👑 Manage Admins
+              </button>
+              <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.75rem;" id="btnRefreshAdmin">
                 🔄 Refresh
               </button>
-              <button class="btn btn-danger" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnAdminLogout">
+              <button class="btn btn-danger" style="width: auto; padding: 6px 12px; font-size: 0.75rem;" id="btnAdminLogout">
                 Logout
               </button>
             </div>
           </div>
 
-          <div style="max-height: 480px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 8px;">
+          <!-- Date Filter Toolbar -->
+          <div class="filter-toolbar">
+            <div class="filter-group">
+              <span style="font-weight: 700; font-size: 0.78rem; color: var(--gray-700);">📅 Filter Date:</span>
+              <input type="date" id="adminDateFilter" style="width: 150px; padding: 5px 8px; font-size: 0.78rem;">
+              <button type="button" class="btn btn-secondary" style="width: auto; padding: 5px 12px; font-size: 0.75rem;" id="btnDateToday">Today</button>
+              <button type="button" class="btn btn-secondary" style="width: auto; padding: 5px 12px; font-size: 0.75rem;" id="btnDateAll">All Dates</button>
+            </div>
+            <div id="adminFilterStatusLabel" style="font-size: 0.75rem; color: #2563eb; font-weight: 600;">
+              Showing All Dates
+            </div>
+          </div>
+
+          <!-- Requests Table -->
+          <div style="max-height: 440px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 8px;">
             <table class="admin-table">
               <thead>
                 <tr>
@@ -1190,6 +800,76 @@
             </table>
           </div>
         </div>
+
+        <!-- 4. MASTER ADMIN DASHBOARD VIEW (Kenil Account Manager) -->
+        <div id="masterDashboardView" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="font-size: 1rem; font-weight: 700; color: var(--gray-900);">👑 Master Control Panel</h3>
+              <p style="font-size: 0.75rem; color: var(--gray-500);">Add, edit, or delete Admin accounts who can approve intern logs.</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnOpenAddAdmin">
+                ➕ Add New Admin
+              </button>
+              <button class="btn btn-secondary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnBackToApprovals">
+                📋 View Approvals
+              </button>
+              <button class="btn btn-danger" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnMasterLogout">
+                Logout
+              </button>
+            </div>
+          </div>
+
+          <!-- Add / Edit Admin Form Card (Collapsible) -->
+          <div id="adminFormCard" style="display: none; background: #f8fafc; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <h4 id="adminFormTitle" style="font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; color: #1e3a8a;">Add New Admin Account</h4>
+            <input type="hidden" id="editAdminId">
+            <div class="form-row" style="margin-bottom: 10px;">
+              <div>
+                <label for="formAdminUsername">Username <span style="color: #ef4444;">*</span></label>
+                <input type="text" id="formAdminUsername" placeholder="e.g. rahul_admin" required>
+              </div>
+              <div>
+                <label for="formAdminPassword">Password <span style="color: #ef4444;">*</span></label>
+                <input type="text" id="formAdminPassword" placeholder="Enter password" required>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label for="formAdminName">Admin Name / Note</label>
+              <input type="text" id="formAdminName" placeholder="e.g. Rahul (Friend / Shift Incharge)">
+            </div>
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+              <button type="button" class="btn btn-secondary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnCancelAdminForm">
+                Cancel
+              </button>
+              <button type="button" class="btn btn-success" style="width: auto; padding: 6px 16px; font-size: 0.78rem;" id="btnSaveAdminAccount">
+                Save Admin
+              </button>
+            </div>
+          </div>
+
+          <!-- Admin Accounts Table -->
+          <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 8px;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Password</th>
+                  <th>Name / Note</th>
+                  <th>Created At</th>
+                  <th style="text-align: center;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="masterAdminsTableBody">
+                <tr>
+                  <td colspan="5" style="text-align: center; color: var(--gray-400); padding: 24px;">Loading admins...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1203,6 +883,8 @@
     let currentRequestId = null;
     let statusPollInterval = null;
     let adminToken = localStorage.getItem('divider_admin_token') || null;
+    let masterToken = localStorage.getItem('divider_master_token') || null;
+    let currentDateFilter = null;
 
     // Elements
     const userNameInput = document.getElementById('userNameInput');
@@ -1247,14 +929,24 @@
     const previewTableBody = document.getElementById('previewTableBody');
     const toast = document.getElementById('toast');
 
-    // Admin Modal Elements
+    // Admin & Master Elements
     const adminModal = document.getElementById('adminModal');
+    const modalMainTitle = document.getElementById('modalMainTitle');
     const btnOpenAdminModal = document.getElementById('btnOpenAdminModal');
     const btnCloseAdminModal = document.getElementById('btnCloseAdminModal');
+
     const adminLoginBox = document.getElementById('adminLoginBox');
     const adminLoginForm = document.getElementById('adminLoginForm');
     const adminUsername = document.getElementById('adminUsername');
     const adminPassword = document.getElementById('adminPassword');
+    const linkOpenMasterLogin = document.getElementById('linkOpenMasterLogin');
+
+    const masterLoginBox = document.getElementById('masterLoginBox');
+    const masterLoginForm = document.getElementById('masterLoginForm');
+    const masterUsername = document.getElementById('masterUsername');
+    const masterPassword = document.getElementById('masterPassword');
+    const linkBackToAdminLogin = document.getElementById('linkBackToAdminLogin');
+
     const adminDashboardView = document.getElementById('adminDashboardView');
     const adminCountPending = document.getElementById('adminCountPending');
     const adminCountApproved = document.getElementById('adminCountApproved');
@@ -1262,9 +954,31 @@
     const adminTableBody = document.getElementById('adminTableBody');
     const btnRefreshAdmin = document.getElementById('btnRefreshAdmin');
     const btnAdminLogout = document.getElementById('btnAdminLogout');
+    const btnGoToMasterFromAdmin = document.getElementById('btnGoToMasterFromAdmin');
+
+    const adminDateFilter = document.getElementById('adminDateFilter');
+    const btnDateToday = document.getElementById('btnDateToday');
+    const btnDateAll = document.getElementById('btnDateAll');
+    const adminFilterStatusLabel = document.getElementById('adminFilterStatusLabel');
+
+    // Master Dashboard Elements
+    const masterDashboardView = document.getElementById('masterDashboardView');
+    const btnOpenAddAdmin = document.getElementById('btnOpenAddAdmin');
+    const btnBackToApprovals = document.getElementById('btnBackToApprovals');
+    const btnMasterLogout = document.getElementById('btnMasterLogout');
+    const adminFormCard = document.getElementById('adminFormCard');
+    const adminFormTitle = document.getElementById('adminFormTitle');
+    const editAdminId = document.getElementById('editAdminId');
+    const formAdminUsername = document.getElementById('formAdminUsername');
+    const formAdminPassword = document.getElementById('formAdminPassword');
+    const formAdminName = document.getElementById('formAdminName');
+    const btnCancelAdminForm = document.getElementById('btnCancelAdminForm');
+    const btnSaveAdminAccount = document.getElementById('btnSaveAdminAccount');
+    const masterAdminsTableBody = document.getElementById('masterAdminsTableBody');
 
     // Default target date
-    targetDateInput.value = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toISOString().split('T')[0];
+    targetDateInput.value = todayStr;
 
     // Drag and Drop
     dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
@@ -1403,7 +1117,7 @@
     async function triggerPreview() {
       if (!currentFile) return;
       btnPreview.disabled = true;
-      previewTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--gray-500); padding: 24px;">Calculating preview (max 50 rows)...</td></tr>`;
+      previewTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--gray-500); padding: 24px;">Calculating preview (strictly max 50 rows)...</td></tr>`;
 
       const formData = new FormData();
       formData.append('file', currentFile);
@@ -1509,7 +1223,7 @@
         approvalCard.className = 'approval-card approval-pending';
         approvalStatusBadge.className = 'status-badge badge-pending';
         approvalStatusBadge.innerText = '⏳ PENDING APPROVAL';
-        approvalMsg.innerText = 'Awaiting Admin Approval. Admin will validate your shift timings and break windows before unlocking the download.';
+        approvalMsg.innerText = 'Awaiting Admin Approval. Admin will validate your shift timings and break windows before unlocking download.';
         approvedDownloadContainer.style.display = 'none';
       } else if (req.status === 'APPROVED') {
         approvalCard.className = 'approval-card approval-approved';
@@ -1521,7 +1235,7 @@
         approvalCard.className = 'approval-card approval-rejected';
         approvalStatusBadge.className = 'status-badge badge-rejected';
         approvalStatusBadge.innerText = '❌ REJECTED';
-        approvalMsg.innerText = `Rejected by Admin. Reason: ${req.rejection_reason || 'Timing mismatch'}. Please correct your inputs and resubmit.`;
+        approvalMsg.innerText = `Rejected by Admin. Reason: ${req.rejection_reason || 'Timing mismatch'}. Please correct inputs and resubmit.`;
         approvedDownloadContainer.style.display = 'none';
       }
     }
@@ -1548,15 +1262,16 @@
     });
 
     // =========================================================================
-    // ADMIN DASHBOARD & LOGIN
+    // MODAL NAVIGATION CONTROLLERS
     // =========================================================================
     btnOpenAdminModal.addEventListener('click', () => {
       adminModal.classList.add('active');
-      if (adminToken) {
+      if (masterToken) {
+        showMasterDashboard();
+      } else if (adminToken) {
         showAdminDashboard();
       } else {
-        adminLoginBox.style.display = 'block';
-        adminDashboardView.style.display = 'none';
+        showAdminLogin();
       }
     });
 
@@ -1564,6 +1279,66 @@
       adminModal.classList.remove('active');
     });
 
+    linkOpenMasterLogin.addEventListener('click', () => {
+      showMasterLogin();
+    });
+
+    linkBackToAdminLogin.addEventListener('click', () => {
+      showAdminLogin();
+    });
+
+    btnGoToMasterFromAdmin.addEventListener('click', () => {
+      if (masterToken) {
+        showMasterDashboard();
+      } else {
+        showMasterLogin();
+      }
+    });
+
+    btnBackToApprovals.addEventListener('click', () => {
+      showAdminDashboard();
+    });
+
+    function hideAllModalViews() {
+      adminLoginBox.style.display = 'none';
+      masterLoginBox.style.display = 'none';
+      adminDashboardView.style.display = 'none';
+      masterDashboardView.style.display = 'none';
+    }
+
+    function showAdminLogin() {
+      hideAllModalViews();
+      modalMainTitle.innerText = "🛡️ Admin Command Center — Approvals & Verification";
+      adminLoginBox.style.display = 'block';
+      adminUsername.value = '';
+      adminPassword.value = '';
+    }
+
+    function showMasterLogin() {
+      hideAllModalViews();
+      modalMainTitle.innerText = "👑 Master Admin Portal (Kenil Access)";
+      masterLoginBox.style.display = 'block';
+      masterUsername.value = '';
+      masterPassword.value = '';
+    }
+
+    function showAdminDashboard() {
+      hideAllModalViews();
+      modalMainTitle.innerText = "🛡️ Admin Command Center — Approvals & Verification";
+      adminDashboardView.style.display = 'block';
+      loadAdminRequests();
+    }
+
+    function showMasterDashboard() {
+      hideAllModalViews();
+      modalMainTitle.innerText = "👑 Master Admin Control Center (Kenil)";
+      masterDashboardView.style.display = 'block';
+      loadMasterAdmins();
+    }
+
+    // =========================================================================
+    // NORMAL ADMIN LOGIN & REQUESTS WITH DATE FILTER
+    // =========================================================================
     adminLoginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const u = adminUsername.value.trim();
@@ -1590,32 +1365,54 @@
     btnAdminLogout.addEventListener('click', () => {
       adminToken = null;
       localStorage.removeItem('divider_admin_token');
-      adminLoginBox.style.display = 'block';
-      adminDashboardView.style.display = 'none';
+      showAdminLogin();
       showToast('Logged out of Admin');
     });
 
-    btnRefreshAdmin.addEventListener('click', loadAdminRequests);
+    btnRefreshAdmin.addEventListener('click', () => loadAdminRequests());
 
-    function showAdminDashboard() {
-      adminLoginBox.style.display = 'none';
-      adminDashboardView.style.display = 'block';
+    // Date Filter Events
+    adminDateFilter.addEventListener('change', () => {
+      currentDateFilter = adminDateFilter.value || null;
       loadAdminRequests();
-    }
+    });
+
+    btnDateToday.addEventListener('click', () => {
+      adminDateFilter.value = todayStr;
+      currentDateFilter = todayStr;
+      loadAdminRequests();
+    });
+
+    btnDateAll.addEventListener('click', () => {
+      adminDateFilter.value = '';
+      currentDateFilter = null;
+      loadAdminRequests();
+    });
 
     async function loadAdminRequests() {
-      if (!adminToken) return;
+      if (!adminToken && !masterToken) {
+        showAdminLogin();
+        return;
+      }
+      const tokenToUse = adminToken || masterToken;
       adminTableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--gray-500); padding: 24px;">Loading requests...</td></tr>`;
 
+      let url = '/api/admin/requests';
+      if (currentDateFilter) {
+        url += `?date=${encodeURIComponent(currentDateFilter)}`;
+        adminFilterStatusLabel.innerText = `Filtered: ${currentDateFilter}`;
+      } else {
+        adminFilterStatusLabel.innerText = 'Showing All Dates';
+      }
+
       try {
-        const resp = await fetch('/api/admin/requests', {
-          headers: { 'X-Admin-Token': adminToken }
+        const resp = await fetch(url, {
+          headers: { 'X-Admin-Token': tokenToUse }
         });
         if (resp.status === 401) {
           adminToken = null;
           localStorage.removeItem('divider_admin_token');
-          adminLoginBox.style.display = 'block';
-          adminDashboardView.style.display = 'none';
+          showAdminLogin();
           return;
         }
         const res = await resp.json();
@@ -1640,7 +1437,7 @@
       adminCountRejected.innerText = rejected;
 
       if (!reqs || reqs.length === 0) {
-        adminTableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--gray-400); padding: 30px;">No requests found yet.</td></tr>`;
+        adminTableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--gray-400); padding: 30px;">No requests found for this filter.</td></tr>`;
         return;
       }
 
@@ -1683,10 +1480,11 @@
 
     window.handleAdminApprove = async function(reqId) {
       if (!confirm(`Are you sure you want to APPROVE request #${reqId}?`)) return;
+      const tokenToUse = adminToken || masterToken;
       try {
         const resp = await fetch(`/api/admin/approve/${reqId}`, {
           method: 'POST',
-          headers: { 'X-Admin-Token': adminToken }
+          headers: { 'X-Admin-Token': tokenToUse }
         });
         const res = await resp.json();
         if (!res.success) throw new Error(res.error);
@@ -1700,12 +1498,13 @@
     window.handleAdminReject = async function(reqId) {
       const reason = prompt(`Enter rejection reason for #${reqId}:`, "Excessive break timing or invalid shift hours");
       if (reason === null) return;
+      const tokenToUse = adminToken || masterToken;
       try {
         const formData = new FormData();
         formData.append('reason', reason);
         const resp = await fetch(`/api/admin/reject/${reqId}`, {
           method: 'POST',
-          headers: { 'X-Admin-Token': adminToken },
+          headers: { 'X-Admin-Token': tokenToUse },
           body: formData
         });
         const res = await resp.json();
@@ -1718,7 +1517,178 @@
     };
 
     window.handleAdminDownload = function(reqId) {
-      window.location.href = `/api/admin/download/${reqId}?token=${adminToken}`;
+      const tokenToUse = adminToken || masterToken;
+      window.location.href = `/api/admin/download/${reqId}?token=${tokenToUse}`;
+    };
+
+    // =========================================================================
+    // MASTER ADMIN CONTROLLERS (Kenil / Canon)
+    // =========================================================================
+    masterLoginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const u = masterUsername.value.trim();
+      const p = masterPassword.value.trim();
+
+      const formData = new FormData();
+      formData.append('username', u);
+      formData.append('password', p);
+
+      try {
+        const resp = await fetch('/api/master/login', { method: 'POST', body: formData });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error || 'Master Login failed');
+
+        masterToken = res.token;
+        adminToken = res.token; // Master can also view approvals
+        localStorage.setItem('divider_master_token', masterToken);
+        localStorage.setItem('divider_admin_token', adminToken);
+        showToast('Welcome, Master Admin (Kenil)!');
+        showMasterDashboard();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    });
+
+    btnMasterLogout.addEventListener('click', () => {
+      masterToken = null;
+      localStorage.removeItem('divider_master_token');
+      showAdminLogin();
+      showToast('Logged out of Master Portal');
+    });
+
+    btnOpenAddAdmin.addEventListener('click', () => {
+      adminFormTitle.innerText = "➕ Add New Admin Account";
+      editAdminId.value = '';
+      formAdminUsername.value = '';
+      formAdminPassword.value = '';
+      formAdminName.value = '';
+      adminFormCard.style.display = 'block';
+      formAdminUsername.focus();
+    });
+
+    btnCancelAdminForm.addEventListener('click', () => {
+      adminFormCard.style.display = 'none';
+    });
+
+    btnSaveAdminAccount.addEventListener('click', async () => {
+      const aId = editAdminId.value.trim();
+      const u = formAdminUsername.value.trim();
+      const p = formAdminPassword.value.trim();
+      const n = formAdminName.value.trim();
+
+      if (!u || !p) {
+        showToast('Username and Password are required!', true);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('username', u);
+      formData.append('password', p);
+      formData.append('name', n);
+
+      let url = '/api/master/admins/add';
+      if (aId) {
+        url = '/api/master/admins/update';
+        formData.append('admin_id', aId);
+      }
+
+      try {
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'X-Master-Token': masterToken },
+          body: formData
+        });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error || 'Failed to save admin account');
+
+        showToast(aId ? 'Admin updated successfully!' : 'New admin added successfully!');
+        adminFormCard.style.display = 'none';
+        loadMasterAdmins();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    });
+
+    async function loadMasterAdmins() {
+      if (!masterToken) return;
+      masterAdminsTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--gray-400); padding: 24px;">Loading admins...</td></tr>`;
+
+      try {
+        const resp = await fetch('/api/master/admins', {
+          headers: { 'X-Master-Token': masterToken }
+        });
+        if (resp.status === 401) {
+          masterToken = null;
+          localStorage.removeItem('divider_master_token');
+          showMasterLogin();
+          return;
+        }
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error);
+
+        renderMasterAdminsTable(res.admins);
+      } catch (err) {
+        showToast('Failed to load admins: ' + err.message, true);
+      }
+    }
+
+    function renderMasterAdminsTable(admins) {
+      if (!admins || admins.length === 0) {
+        masterAdminsTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--gray-400); padding: 24px;">No admin accounts configured.</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      admins.forEach(adm => {
+        html += `
+          <tr>
+            <td><strong style="color: #0f172a;">${adm.username}</strong></td>
+            <td>
+              <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">${adm.password}</code>
+            </td>
+            <td>${adm.name || '—'}</td>
+            <td style="color: var(--gray-500); font-size: 0.72rem;">${adm.created_at || '—'}</td>
+            <td style="text-align: center; white-space: nowrap;">
+              <button class="action-btn-sm action-btn-dl" onclick="editAdmin('${adm.id}', '${encodeURIComponent(adm.username)}', '${encodeURIComponent(adm.password)}', '${encodeURIComponent(adm.name || '')}')">✏️ Edit</button>
+              <button class="action-btn-sm action-btn-reject" onclick="deleteAdmin('${adm.id}', '${encodeURIComponent(adm.username)}')">🗑️ Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+      masterAdminsTableBody.innerHTML = html;
+    }
+
+    window.editAdmin = function(id, encU, encP, encN) {
+      adminFormTitle.innerText = "✏️ Edit Admin Account";
+      editAdminId.value = id;
+      formAdminUsername.value = decodeURIComponent(encU);
+      formAdminPassword.value = decodeURIComponent(encP);
+      formAdminName.value = decodeURIComponent(encN);
+      adminFormCard.style.display = 'block';
+      formAdminUsername.focus();
+    };
+
+    window.deleteAdmin = async function(id, encU) {
+      const u = decodeURIComponent(encU);
+      if (!confirm(`Are you sure you want to DELETE admin account '${u}'?`)) return;
+
+      const formData = new FormData();
+      formData.append('admin_id', id);
+
+      try {
+        const resp = await fetch('/api/master/admins/delete', {
+          method: 'POST',
+          headers: { 'X-Master-Token': masterToken },
+          body: formData
+        });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error || 'Failed to delete');
+
+        showToast(`Admin '${u}' deleted!`);
+        loadMasterAdmins();
+      } catch (err) {
+        showToast(err.message, true);
+      }
     };
 
     // Initial timeline

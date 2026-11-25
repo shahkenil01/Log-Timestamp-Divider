@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Log Timestamp Divider - Web Server with Approval Workflow & Admin Dashboard
-Provides:
+Log Timestamp Divider - Web Server with Approval Workflow & Multi-Admin Management
+Features:
 1. Public preview (strictly limited to 50 rows).
 2. Intern / User approval submission with Requester Name.
 3. Locked download (users CANNOT download until Admin approves).
-4. Protected Admin Dashboard to view, validate breaks/timings, and approve/reject requests.
+4. Protected Admin Dashboard with Date-wise filter & live status management.
+5. Master Admin Portal (Kenil / Canon) to Add, Edit, and Delete Admin accounts.
 """
 
 import os
@@ -31,7 +32,13 @@ from engine import detect_excel_info, distribute_excel_timestamps
 from storage import (
     init_storage,
     verify_admin_login,
+    verify_master_login,
     is_valid_admin_token,
+    is_valid_master_token,
+    list_all_admins,
+    add_admin_account,
+    update_admin_account,
+    delete_admin_account,
     create_approval_request,
     get_request_by_id,
     load_all_requests,
@@ -46,7 +53,7 @@ INDEX_HTML = TEMPLATES_DIR / "index.html"
 # Initialize data store
 init_storage()
 
-app = FastAPI(title="Log Timestamp Divider with Admin Approval", version="2.0.0")
+app = FastAPI(title="Log Timestamp Divider with Admin Approval & Master Control", version="2.5.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -249,19 +256,23 @@ async def download_approved_file(request_id: str):
 @app.post("/api/admin/login")
 async def admin_login(username: str = Form(...), password: str = Form(...)):
     """Verifies admin credentials and returns session token."""
-    ok, token = verify_admin_login(username.strip(), password.strip())
+    ok, token, adm_info = verify_admin_login(username.strip(), password.strip())
     if not ok:
         return JSONResponse({"success": False, "error": "Invalid Admin Username or Password."}, status_code=401)
-    return JSONResponse({"success": True, "token": token})
+    return JSONResponse({"success": True, "token": token, "admin": adm_info})
 
 
 @app.get("/api/admin/requests")
-async def admin_get_requests(authorization: str = Header(None), x_admin_token: str = Header(None)):
-    """Returns all requests for Admin inspection."""
+async def admin_get_requests(
+    date: str = None,
+    authorization: str = Header(None),
+    x_admin_token: str = Header(None)
+):
+    """Returns requests for Admin inspection, with optional date filtering."""
     token = x_admin_token or authorization
     if not is_valid_admin_token(token):
         return JSONResponse({"success": False, "error": "Unauthorized. Please login as Admin."}, status_code=401)
-    reqs = load_all_requests()
+    reqs = load_all_requests(date_filter=date)
     return JSONResponse({"success": True, "requests": reqs})
 
 
@@ -312,6 +323,85 @@ async def admin_direct_download(request_id: str, token: str = None, authorizatio
     )
 
 
+# =============================================================================
+# MASTER ADMIN API (Kenil / Canon)
+# =============================================================================
+
+@app.post("/api/master/login")
+async def master_login(username: str = Form(...), password: str = Form(...)):
+    """Verifies Master Admin (Kenil/Canon) credentials."""
+    ok, token = verify_master_login(username.strip(), password.strip())
+    if not ok:
+        return JSONResponse({"success": False, "error": "Invalid Master Username or Password."}, status_code=401)
+    return JSONResponse({"success": True, "token": token})
+
+
+@app.get("/api/master/admins")
+async def master_get_admins(authorization: str = Header(None), x_master_token: str = Header(None)):
+    """Master Admin views all configured admin accounts."""
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+    admins = list_all_admins()
+    return JSONResponse({"success": True, "admins": admins})
+
+
+@app.post("/api/master/admins/add")
+async def master_add_admin(
+    username: str = Form(...),
+    password: str = Form(...),
+    name: str = Form(""),
+    authorization: str = Header(None),
+    x_master_token: str = Header(None)
+):
+    """Master Admin adds a new admin user."""
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+    try:
+        new_adm = add_admin_account(username, password, name)
+        return JSONResponse({"success": True, "admin": new_adm})
+    except Exception as exc:
+        return JSONResponse({"success": False, "error": str(exc)}, status_code=400)
+
+
+@app.post("/api/master/admins/update")
+async def master_update_admin(
+    admin_id: str = Form(...),
+    username: str = Form(...),
+    password: str = Form(...),
+    name: str = Form(""),
+    authorization: str = Header(None),
+    x_master_token: str = Header(None)
+):
+    """Master Admin updates an admin user."""
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+    try:
+        upd = update_admin_account(admin_id, username, password, name)
+        return JSONResponse({"success": True, "admin": upd})
+    except Exception as exc:
+        return JSONResponse({"success": False, "error": str(exc)}, status_code=400)
+
+
+@app.post("/api/master/admins/delete")
+async def master_delete_admin(
+    admin_id: str = Form(...),
+    authorization: str = Header(None),
+    x_master_token: str = Header(None)
+):
+    """Master Admin deletes an admin user."""
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+    try:
+        delete_admin_account(admin_id)
+        return JSONResponse({"success": True})
+    except Exception as exc:
+        return JSONResponse({"success": False, "error": str(exc)}, status_code=400)
+
+
 def open_browser_delayed(url, delay=1.2):
     def _open():
         import time
@@ -335,9 +425,10 @@ if __name__ == "__main__":
 
     url = f"http://{host}:{port}/"
     print(f"\n========================================================")
-    print(f"  Log Timestamp Divider with Admin Approval Workflow")
+    print(f"  Log Timestamp Divider with Multi-Admin & Master Control")
     print(f"  Running at: {url} (Cloud Mode: {is_cloud})")
-    print(f"  Default Admin Credentials: admin / admin")
+    print(f"  Default Admin: automationpaglu / automationpaglu")
+    print(f"  Master Access: kenil / kenil (or canon / canon)")
     print(f"========================================================\n")
 
     if not args.no_browser and not is_cloud:
