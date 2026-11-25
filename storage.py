@@ -219,11 +219,18 @@ def get_github_token() -> str:
 
 
 def get_github_repo() -> str:
-    """Dynamically resolves GitHub repo from .env or OS environment."""
+    """Dynamically resolves GitHub repo (owner/repo) from .env or OS environment."""
     repo = get_env_value("GITHUB_REPO", "").strip()
-    if repo and repo != "owner/repository" and not repo.startswith("your_"):
-        return repo
-    return ""
+    if not repo or repo == "owner/repository" or repo.startswith("your_"):
+        return ""
+    m = re.match(r"^(?:https?://)?(?:www\.)?github\.com/([^/\s]+)/([^/\s]+)", repo, re.IGNORECASE)
+    if m:
+        owner = m.group(1)
+        name = m.group(2)
+        if name.endswith(".git"):
+            name = name[:-4]
+        return f"{owner}/{name}"
+    return repo.strip("/")
 
 
 def get_github_data_branch() -> str:
