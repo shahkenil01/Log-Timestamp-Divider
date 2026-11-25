@@ -217,12 +217,12 @@
     }
 
     /* Main Container */
-    main { max-width: 1220px; margin: 24px auto 0 auto; padding: 0 20px; }
+    main { max-width: 1300px; margin: 16px auto 0 auto; padding: 0 16px; }
 
     .grid-2 {
       display: grid;
-      grid-template-columns: 1fr 1.25fr;
-      gap: 24px;
+      grid-template-columns: 1.05fr 1.15fr;
+      gap: 18px;
       align-items: start;
     }
 
@@ -235,13 +235,13 @@
       border-radius: var(--border-radius);
       box-shadow: var(--shadow-sm);
       overflow: hidden;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
       transition: box-shadow 0.2s ease;
     }
 
     .card:hover { box-shadow: var(--shadow); }
     .card-header {
-      padding: 14px 18px;
+      padding: 10px 16px;
       border-bottom: 1px solid var(--gray-200);
       background: #ffffff;
       display: flex;
@@ -250,7 +250,7 @@
     }
 
     .card-title {
-      font-size: 0.925rem;
+      font-size: 0.9rem;
       font-weight: 700;
       color: var(--gray-800);
       display: flex;
@@ -258,7 +258,25 @@
       gap: 8px;
     }
 
-    .card-body { padding: 18px; }
+    .card-body { padding: 14px 16px; }
+
+    /* Compact Dropzone */
+    .compact-dropzone {
+      padding: 12px 14px !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .dropzone-compact-inner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+    .dropzone-icon-sm {
+      font-size: 26px;
+      color: var(--primary);
+    }
 
     /* Dropzone */
     .dropzone {
@@ -551,38 +569,40 @@
 
   <main>
     <div class="grid-2">
-      <!-- Left Column: Inputs & Request Form -->
+      <!-- Left Column: Inputs & Configuration (Compact & No-Scroll) -->
       <section>
-        <!-- User Name Card -->
+        <!-- 1. Combined Requester & File Upload Card -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">👤 1. Intern / Requester Details</div>
+            <div class="card-title">📁 1. Intern Details & Excel Upload</div>
           </div>
           <div class="card-body">
-            <div class="form-group" style="margin-bottom: 0;">
-              <label for="userNameInput">Your Name / Intern Name <span style="color: #ef4444;">*</span></label>
-              <input type="text" id="userNameInput" class="input-highlight" placeholder="Enter your full name (e.g. Rahul Sharma)" required>
-              <span class="label-hint">Admin will see this name on the dashboard to validate your work.</span>
+            <div class="form-row form-group" style="margin-bottom: 12px; align-items: flex-end;">
+              <div>
+                <label for="userNameInput">Your Name / Intern Name <span style="color: #ef4444;">*</span></label>
+                <input type="text" id="userNameInput" class="input-highlight" placeholder="Enter your full name (e.g. Rahul Sharma)" required>
+              </div>
+              <div>
+                <label for="targetDate">Work Date <span class="label-hint">(Target date)</span></label>
+                <input type="date" id="targetDate">
+              </div>
             </div>
-          </div>
-        </div>
 
-        <!-- File Upload Card -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">📁 2. Upload Log Excel File</div>
-          </div>
-          <div class="card-body">
-            <div class="dropzone" id="dropzone">
+            <!-- Compact Dropzone -->
+            <div class="dropzone compact-dropzone" id="dropzone">
               <input type="file" id="fileInput" accept=".xlsx, .xls">
-              <div class="dropzone-icon">📊</div>
-              <h3>Drag & drop your Excel log here</h3>
-              <p>or click to browse (.xlsx, .xls)</p>
+              <div class="dropzone-compact-inner">
+                <span class="dropzone-icon-sm">📊</span>
+                <div>
+                  <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 2px;">Drag & drop your Excel log or <span style="color: #2563eb; text-decoration: underline;">click to browse</span></h3>
+                  <p style="font-size: 0.72rem; color: var(--gray-500); margin: 0;">Preserves 100% of your original Excel headers, styling & column widths (.xlsx, .xls)</p>
+                </div>
+              </div>
             </div>
 
-            <div id="fileInfoBox" class="file-badge" style="display: none;">
+            <div id="fileInfoBox" class="file-badge" style="display: none; margin-top: 8px;">
               <div class="file-badge-left">
-                <div style="font-size: 22px;">📄</div>
+                <div style="font-size: 20px;">📄</div>
                 <div>
                   <div class="file-badge-title" id="fileNameLabel">file.xlsx</div>
                   <div class="file-badge-meta" id="fileMetaLabel">0 rows detected</div>
@@ -593,20 +613,14 @@
           </div>
         </div>
 
-        <!-- Shift & Break Timings Card -->
+        <!-- 2. Shift & Break Configuration Card -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">⚙️ 3. Shift & Break Configuration</div>
+            <div class="card-title">⚙️ 2. Shift & Break Configuration</div>
           </div>
           <div class="card-body">
-            <!-- Work Date -->
-            <div class="form-group">
-              <label for="targetDate">Work Date <span class="label-hint">(Target date for timestamps)</span></label>
-              <input type="date" id="targetDate">
-            </div>
-
-            <!-- Shift Start & End -->
-            <div class="form-row form-group">
+            <!-- Shift Start & End in 1 row -->
+            <div class="form-row form-group" style="margin-bottom: 10px;">
               <div>
                 <label for="shiftStart">Shift Start Time</label>
                 <input type="time" id="shiftStart" value="09:30">
@@ -617,44 +631,47 @@
               </div>
             </div>
 
-            <!-- Primary Break (Lunch) -->
-            <div class="break-card">
-              <div class="break-card-title">🍽️ Primary Break (Lunch) — Zero Timestamps Allowed</div>
-              <div class="form-row">
-                <div>
-                  <label for="lunchStart">Lunch Start</label>
-                  <input type="time" id="lunchStart" value="13:00">
+            <!-- Breaks Row: Lunch + Tea Break side-by-side -->
+            <div class="breaks-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+              <!-- Primary Break (Lunch) -->
+              <div class="break-card" style="margin-bottom: 0; padding: 10px;">
+                <div class="break-card-title" style="font-size: 0.775rem; margin-bottom: 6px;">🍽️ Lunch Break (Zero Logs)</div>
+                <div class="form-row" style="gap: 6px;">
+                  <div>
+                    <label for="lunchStart" style="font-size: 0.7rem; margin-bottom: 2px;">Start</label>
+                    <input type="time" id="lunchStart" value="13:00" style="padding: 5px 8px; font-size: 0.8rem;">
+                  </div>
+                  <div>
+                    <label for="lunchEnd" style="font-size: 0.7rem; margin-bottom: 2px;">End</label>
+                    <input type="time" id="lunchEnd" value="14:00" style="padding: 5px 8px; font-size: 0.8rem;">
+                  </div>
                 </div>
-                <div>
-                  <label for="lunchEnd">Lunch End</label>
-                  <input type="time" id="lunchEnd" value="14:00">
+              </div>
+
+              <!-- Secondary Break (Tea / Evening) -->
+              <div class="break-card" style="margin-bottom: 0; padding: 10px; background: #fdf4ff; border-color: #f0abfc;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <div class="break-card-title" style="color: #86198f; font-size: 0.775rem; margin-bottom: 0;">☕ Tea Break</div>
+                  <label class="checkbox-group" style="margin-top: 0;">
+                    <input type="checkbox" id="break2Enabled">
+                    <span style="font-size: 0.7rem; font-weight: 700; color: #86198f;">Taken</span>
+                  </label>
+                </div>
+                <div class="form-row" id="break2Inputs" style="opacity: 0.5; pointer-events: none; gap: 6px;">
+                  <div>
+                    <label for="break2Start" style="font-size: 0.7rem; margin-bottom: 2px;">Start</label>
+                    <input type="time" id="break2Start" value="16:30" style="padding: 5px 8px; font-size: 0.8rem;">
+                  </div>
+                  <div>
+                    <label for="break2End" style="font-size: 0.7rem; margin-bottom: 2px;">End</label>
+                    <input type="time" id="break2End" value="16:45" style="padding: 5px 8px; font-size: 0.8rem;">
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Secondary Break (Tea / Snack) -->
-            <div class="break-card" style="background: #fdf4ff; border-color: #f0abfc;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <div class="break-card-title" style="color: #86198f; margin-bottom: 0;">☕ Evening / Tea Break (Did you take it?)</div>
-                <label class="checkbox-group" style="margin-top: 0;">
-                  <input type="checkbox" id="break2Enabled">
-                  <span style="font-size: 0.75rem; font-weight: 700;">Yes, Taken</span>
-                </label>
-              </div>
-              <div class="form-row" id="break2Inputs" style="opacity: 0.5; pointer-events: none;">
-                <div>
-                  <label for="break2Start">Break Start</label>
-                  <input type="time" id="break2Start" value="16:30">
-                </div>
-                <div>
-                  <label for="break2End">Break End</label>
-                  <input type="time" id="break2End" value="16:45">
-                </div>
-              </div>
-            </div>
-
-            <!-- Column & Mode -->
-            <div class="form-row form-group">
+            <!-- Column & Mode Row -->
+            <div class="form-row form-group" style="margin-bottom: 12px;">
               <div>
                 <label for="timestampColSelect">Timestamp Column</label>
                 <select id="timestampColSelect">
@@ -670,16 +687,8 @@
               </div>
             </div>
 
-            <!-- Light Blue Theme (Custom Rule) -->
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 12px; margin-bottom: 16px;">
-              <label class="checkbox-group" style="margin-top: 0;">
-                <input type="checkbox" id="applyTheme" checked>
-                <span>Apply Light Blue Theme (Dark Blue #1155CC header, alternate #E8F0FE rows)</span>
-              </label>
-            </div>
-
             <!-- Action Buttons for User -->
-            <div class="btn-group">
+            <div class="btn-group" style="margin-top: 8px;">
               <button class="btn btn-secondary" id="btnPreview" disabled>
                 <span>🔍 Preview (Max 50)</span>
               </button>
@@ -690,7 +699,7 @@
             </div>
 
             <!-- Live Approval Status Card -->
-            <div id="approvalCard" class="approval-card">
+            <div id="approvalCard" class="approval-card" style="margin-top: 10px;">
               <div class="approval-header">
                 <span style="font-weight: 700; font-size: 0.85rem;" id="approvalReqId">#REQ-</span>
                 <span class="status-badge badge-pending" id="approvalStatusBadge">PENDING APPROVAL</span>
@@ -698,7 +707,7 @@
               <p style="font-size: 0.8rem; margin: 6px 0;" id="approvalMsg">
                 Your request has been submitted to Admin. Download is locked until approved.
               </p>
-              <div id="approvedDownloadContainer" style="display: none; margin-top: 12px;">
+              <div id="approvedDownloadContainer" style="display: none; margin-top: 10px;">
                 <button class="btn btn-success" id="btnDownloadApproved">
                   <span>📥 Download Approved Excel File</span>
                 </button>
@@ -715,37 +724,37 @@
             <div class="card-title">📊 Shift & Workload Summary</div>
           </div>
           <div class="card-body">
-            <div class="stats-bar">
-              <div class="stat-box">
+            <div class="stats-bar" style="margin-bottom: 12px;">
+              <div class="stat-box" style="padding: 8px 10px;">
                 <div class="stat-label">Total Logs</div>
-                <div class="stat-value" id="statTotalRows">0</div>
+                <div class="stat-value" id="statTotalRows" style="font-size: 1.25rem;">0</div>
               </div>
-              <div class="stat-box">
+              <div class="stat-box" style="padding: 8px 10px;">
                 <div class="stat-label">Gross Shift</div>
-                <div class="stat-value" id="statShiftHours">9.0h</div>
+                <div class="stat-value" id="statShiftHours" style="font-size: 1.25rem;">9.0h</div>
               </div>
-              <div class="stat-box">
+              <div class="stat-box" style="padding: 8px 10px;">
                 <div class="stat-label">Total Break</div>
-                <div class="stat-value" id="statBreakHours">1.0h</div>
+                <div class="stat-value" id="statBreakHours" style="font-size: 1.25rem;">1.0h</div>
               </div>
-              <div class="stat-box">
+              <div class="stat-box" style="padding: 8px 10px;">
                 <div class="stat-label">Net Work Time</div>
-                <div class="stat-value" id="statWorkHours" style="color: #2563eb;">8.0h</div>
+                <div class="stat-value" id="statWorkHours" style="font-size: 1.25rem; color: #2563eb;">8.0h</div>
               </div>
             </div>
 
             <!-- Visual Schedule Bar -->
-            <div class="timeline-container">
-              <div class="timeline-header">
+            <div class="timeline-container" style="margin-top: 6px;">
+              <div class="timeline-header" style="margin-bottom: 4px;">
                 <span>DAY SCHEDULE TIMELINE</span>
                 <span id="timelinePace">Average: ~0 mins/log</span>
               </div>
-              <div class="timeline-track" id="timelineTrack">
+              <div class="timeline-track" id="timelineTrack" style="height: 14px;">
                 <div class="timeline-seg-work" style="width: 38%;"></div>
                 <div class="timeline-seg-break" style="width: 12%;">LUNCH</div>
                 <div class="timeline-seg-work" style="width: 50%;"></div>
               </div>
-              <div class="timeline-ticks">
+              <div class="timeline-ticks" style="margin-top: 3px; font-size: 0.68rem;">
                 <span id="tickStart">09:30</span>
                 <span id="tickLunchStart">13:00</span>
                 <span id="tickLunchEnd">14:00</span>
@@ -764,7 +773,7 @@
             </span>
           </div>
           <div class="card-body" style="padding: 0;">
-            <div class="table-container">
+            <div class="table-container" style="max-height: 380px;">
               <table id="previewTable">
                 <thead>
                   <tr>
@@ -776,7 +785,7 @@
                 <tbody id="previewTableBody">
                   <tr>
                     <td colspan="3" style="text-align: center; color: var(--gray-400); padding: 36px;">
-                      Upload an Excel file to preview divided timestamps.
+                      Upload an Excel file on the left to preview divided timestamps.
                     </td>
                   </tr>
                 </tbody>
@@ -1129,7 +1138,6 @@
     const break2EndInput = document.getElementById('break2End');
     const timestampColSelect = document.getElementById('timestampColSelect');
     const pacingMode = document.getElementById('pacingMode');
-    const applyThemeInput = document.getElementById('applyTheme');
 
     const btnPreview = document.getElementById('btnPreview');
     const btnSubmitApproval = document.getElementById('btnSubmitApproval');
@@ -1378,7 +1386,7 @@
       formData.append('break2_end', break2EndInput.value);
       formData.append('timestamp_col', timestampColSelect.value || '');
       formData.append('mode', pacingMode.value);
-      formData.append('apply_theme', applyThemeInput.checked ? 'true' : 'false');
+      formData.append('apply_theme', 'false');
 
       try {
         const resp = await fetch('/api/preview', { method: 'POST', body: formData });
@@ -1441,7 +1449,7 @@
       formData.append('break2_end', break2EndInput.value);
       formData.append('timestamp_col', timestampColSelect.value || '');
       formData.append('mode', pacingMode.value);
-      formData.append('apply_theme', applyThemeInput.checked ? 'true' : 'false');
+      formData.append('apply_theme', 'false');
 
       try {
         const resp = await fetch('/api/request-approval', { method: 'POST', body: formData });

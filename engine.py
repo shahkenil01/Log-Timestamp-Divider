@@ -512,47 +512,12 @@ def distribute_excel_timestamps(
         end_buffer_minutes=end_buffer_minutes
     )
 
-    # Light Blue Theme styles
-    header_fill = PatternFill(start_color="1155CC", end_color="1155CC", fill_type="solid")
-    header_font = Font(name="Segoe UI", size=11, bold=True, color="FFFFFF")
-    even_row_fill = PatternFill(start_color="E8F0FE", end_color="E8F0FE", fill_type="solid")
-    odd_row_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
-    thin_border = Border(
-        left=Side(style="thin", color="CBD5E1"),
-        right=Side(style="thin", color="CBD5E1"),
-        top=Side(style="thin", color="CBD5E1"),
-        bottom=Side(style="thin", color="CBD5E1")
-    )
-    center_align = Alignment(horizontal="center", vertical="center")
-    left_align = Alignment(horizontal="left", vertical="center")
-
+    # Strictly preserve the user's original Excel formatting, headers, styles, and column widths.
+    # ONLY update the timestamp column value for data rows.
     for pos, r_idx in enumerate(data_row_indices):
         dt_val = new_timestamps[pos]
         dt_str = dt_val.strftime("%Y-%m-%d %H:%M:%S")
-        cell = ws.cell(row=r_idx, column=ts_col_idx)
-        cell.value = dt_str
-
-        if apply_light_blue_theme:
-            row_fill = even_row_fill if (r_idx % 2 == 0) else odd_row_fill
-            for c_idx in range(1, total_cols + 1):
-                c_cell = ws.cell(row=r_idx, column=c_idx)
-                c_cell.fill = row_fill
-                c_cell.border = thin_border
-                c_cell.font = Font(name="Segoe UI", size=10, color="0F172A")
-                if c_idx in (1, ts_col_idx):
-                    c_cell.alignment = center_align
-                else:
-                    c_cell.alignment = left_align
-
-    if apply_light_blue_theme:
-        ws.row_dimensions[1].height = 28
-        ws.freeze_panes = "A2"
-        for c_idx in range(1, total_cols + 1):
-            h_cell = ws.cell(row=1, column=c_idx)
-            h_cell.fill = header_fill
-            h_cell.font = header_font
-            h_cell.border = thin_border
-            h_cell.alignment = center_align
+        ws.cell(row=r_idx, column=ts_col_idx).value = dt_str
 
     shift_duration_sec = (datetime.datetime.combine(target_date, shift_end) - datetime.datetime.combine(target_date, shift_start)).total_seconds()
     break_total_sec = sum(
