@@ -6,7 +6,7 @@ Features:
 2. User / Team Member approval submission with Requester Name.
 3. Locked download (users CANNOT download until Admin approves).
 4. Protected Admin Dashboard with Date-wise filter & live status management.
-5. Master Admin Portal (Kenil / Canon) to Add, Edit, and Delete Admin accounts.
+5. Master Admin Portal (Kenil) to Add, Edit, and Delete Admin accounts.
 """
 
 import os
@@ -47,6 +47,9 @@ from storage import (
     get_request_excel_path,
     list_all_releases,
     save_release_file,
+    update_release_password,
+    generate_download_token,
+    verify_download_token,
     get_release_by_id,
     get_release_file_path,
     delete_release_file
@@ -329,12 +332,12 @@ async def admin_direct_download(request_id: str, token: str = None, authorizatio
 
 
 # =============================================================================
-# MASTER ADMIN API (Kenil / Canon)
+# MASTER ADMIN API (Kenil)
 # =============================================================================
 
 @app.post("/api/master/login")
 async def master_login(username: str = Form(...), password: str = Form(...)):
-    """Verifies Master Admin (Kenil/Canon) credentials."""
+    """Verifies Master Admin (Kenil) credentials."""
     ok, token = verify_master_login(username.strip(), password.strip())
     if not ok:
         return JSONResponse({"success": False, "error": "Invalid Master Username or Password."}, status_code=401)
@@ -413,18 +416,78 @@ async def master_delete_admin(
 
 @app.get("/api/releases")
 async def get_public_releases():
-    """Public endpoint to list all available ActMaster zip releases & updates."""
-    releases = list_all_releases()
+    """Public endpoint to list all available ActMaster zip releases & updates (passwords hidden)."""
+    releases = list_all_releases(public_view=True)
     return JSONResponse({"success": True, "releases": releases})
 
 
+@app.get("/api/master/releases")
+async def get_master_releases(authorization: str = Header(None), x_master_token: str = Header(None)):
+    """Master Admin endpoint to list all releases with visible passwords for management."""
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+    releases = list_all_releases(public_view=False)
+    return JSONResponse({"success": True, "releases": releases})
+
+
+@app.post("/api/releases/verify-password")
+async def verify_release_password(
+    release_id: str = Form(...),
+    password: str = Form("")
+):
+    """Verifies user-submitted security password before downloading a zip release."""
+    rel = get_release_by_id(release_id)
+    if not rel:
+        return JSONResponse({"success": False, "error": "Release package not found."}, status_code=404)
+    
+    expected_pw = str(rel.get("download_password") or "").strip()
+    if not expected_pw:
+        # No password required
+        return JSONResponse({
+            "success": True, 
+            "download_url": f"/api/releases/download/{release_id}"
+        })
+    
+    if password.strip() != expected_pw:
+        return JSONResponse({
+            "success": False, 
+            "error": "Incorrect security password! Please contact Admin (Kenil) for the download password."
+        }, status_code=403)
+    
+    # Generate single-use secure download token (valid for 15 mins)
+    dl_token = generate_download_token(release_id)
+    return JSONResponse({
+        "success": True, 
+        "download_url": f"/api/releases/download/{release_id}?dl_token={dl_token}"
+    })
+
+
 @app.get("/api/releases/download/{release_id}")
-async def download_release_file(release_id: str):
-    """Public endpoint to download an ActMaster zip release package."""
+async def download_release_file(
+    release_id: str,
+    dl_token: str = None,
+    password: str = None
+):
+    """Public endpoint to download an ActMaster zip release package with security password verification."""
     rel = get_release_by_id(release_id)
     if not rel:
         raise HTTPException(status_code=404, detail="Release package not found.")
     
+    expected_pw = str(rel.get("download_password") or "").strip()
+    if expected_pw:
+        authorized = False
+        if dl_token and verify_download_token(release_id, dl_token):
+            authorized = True
+        elif password and password.strip() == expected_pw:
+            authorized = True
+        
+        if not authorized:
+            raise HTTPException(
+                status_code=403, 
+                detail="Download Locked! Security password required to download this ActMaster release."
+            )
+
     # If GitHub Release CDN URL is present, redirect directly for fast cloud download with 0 server memory/disk load
     if rel.get("download_url"):
         return RedirectResponse(url=rel["download_url"], status_code=302)
@@ -446,10 +509,11 @@ async def master_upload_release(
     file: UploadFile = File(...),
     title: str = Form(""),
     description: str = Form(""),
+    download_password: str = Form(""),
     authorization: str = Header(None),
     x_master_token: str = Header(None)
 ):
-    """Master Admin uploads a new ActMaster zip release or update."""
+    """Master Admin uploads a new ActMaster zip release or update with optional download password."""
     token = x_master_token or authorization
     if not is_valid_master_token(token):
         return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
@@ -464,11 +528,30 @@ async def master_upload_release(
             file_bytes=content,
             title=title,
             description=description,
+            download_password=download_password,
             uploaded_by="Master Admin (Kenil)"
         )
         return JSONResponse({"success": True, "release": rel_meta})
     except Exception as exc:
         return JSONResponse({"success": False, "error": str(exc)}, status_code=400)
+
+
+@app.post("/api/master/releases/update-password")
+async def master_update_release_password(
+    release_id: str = Form(...),
+    password: str = Form(""),
+    authorization: str = Header(None),
+    x_master_token: str = Header(None)
+):
+    """Master Admin updates or sets a security password for an existing release."""
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+    
+    ok = update_release_password(release_id, password.strip())
+    if not ok:
+        return JSONResponse({"success": False, "error": "Release package not found."}, status_code=404)
+    return JSONResponse({"success": True, "password": password.strip()})
 
 
 @app.post("/api/master/releases/delete")
@@ -515,7 +598,7 @@ if __name__ == "__main__":
     print(f"  Log Timestamp Divider with Multi-Admin & Master Control")
     print(f"  Running at: {url} (Cloud Mode: {is_cloud})")
     print(f"  Default Admin: automationpaglu / automationpaglu")
-    print(f"  Master Access: kenil / kenil (or canon / canon)")
+    print(f"  Master Access: kenil / kenil")
     print(f"========================================================\n")
 
     if not args.no_browser and not is_cloud:

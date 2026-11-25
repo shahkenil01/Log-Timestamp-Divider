@@ -17,6 +17,8 @@ import time
 import secrets
 import base64
 import threading
+import datetime
+import re
 from pathlib import Path
 try:
     import requests
@@ -37,6 +39,52 @@ MASTER_PASSWORDS = ["kenil", "canon"]
 
 # Active session tokens {token: {"type": "admin"|"master", "user": "...", "expires": timestamp}}
 ACTIVE_SESSIONS = {}
+
+# Active temporary download tokens {token: {"rel_id": release_id, "expires": timestamp}}
+DOWNLOAD_TOKENS = {}
+
+# Indian Standard Time (IST / UTC+05:30)
+IST_TIMEZONE = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+
+def get_current_ist_datetime() -> datetime.datetime:
+    return datetime.datetime.now(IST_TIMEZONE)
+
+def get_current_ist_str(fmt: str = "%Y-%m-%d %H:%M:%S") -> str:
+    return datetime.datetime.now(IST_TIMEZONE).strftime(fmt)
+
+def format_iso_to_ist(iso_str: str) -> str:
+    """Converts UTC ISO timestamp from GitHub or server into Indian Standard Time (IST)."""
+    if not iso_str:
+        return get_current_ist_str()
+    try:
+        clean = iso_str.rstrip("Z")
+        if "T" in clean:
+            dt = datetime.datetime.fromisoformat(clean)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=datetime.timezone.utc)
+            return dt.astimezone(IST_TIMEZONE).strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        pass
+    return iso_str.replace("T", " ")[:19]
+
+def generate_download_token(release_id: str) -> str:
+    token = secrets.token_urlsafe(24)
+    DOWNLOAD_TOKENS[token] = {
+        "rel_id": str(release_id),
+        "expires": time.time() + 900 # 15 minutes
+    }
+    return token
+
+def verify_download_token(release_id: str, token: str) -> bool:
+    if not token or token not in DOWNLOAD_TOKENS:
+        return False
+    entry = DOWNLOAD_TOKENS[token]
+    if time.time() > entry["expires"]:
+        del DOWNLOAD_TOKENS[token]
+        return False
+    if entry["rel_id"] != str(release_id):
+        return False
+    return True
 
 # GitHub Cloud Persistence Settings
 def _resolve_github_token() -> str:
@@ -168,7 +216,19 @@ def init_storage():
                 json.dump(cloud_cfg, f, indent=2, ensure_ascii=False)
             print("[Storage] Loaded Admin accounts configuration from GitHub Cloud!")
 
-    # 3. Initialize default Admin config if missing
+    # 3. Sync Releases Metadata from GitHub Cloud
+    need_local_releases = not RELEASES_FILE.exists() or RELEASES_FILE.stat().st_size <= 4
+    if need_local_releases:
+        cloud_rels = github_pull_cloud_file("releases.json")
+        if cloud_rels and isinstance(cloud_rels, list) and len(cloud_rels) > 0:
+            with open(RELEASES_FILE, "w", encoding="utf-8") as f:
+                json.dump(cloud_rels, f, indent=2, ensure_ascii=False)
+            print(f"[Storage] Loaded {len(cloud_rels)} releases metadata from GitHub Cloud!")
+        elif not RELEASES_FILE.exists():
+            with open(RELEASES_FILE, "w", encoding="utf-8") as f:
+                json.dump([], f, indent=2)
+
+    # 4. Initialize default Admin config if missing
     should_write_config = False
     config_data = {}
     if CONFIG_FILE.exists():
@@ -185,7 +245,7 @@ def init_storage():
                 "username": "automationpaglu",
                 "password": "automationpaglu",
                 "name": "Automation Paglu (Admin)",
-                "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
+                "created_at": get_current_ist_str()
             }
         ]
         should_write_config = True
@@ -334,7 +394,7 @@ def add_admin_account(username, password, name=""):
         "username": u_clean,
         "password": p_clean,
         "name": str(name or u_clean).strip(),
-        "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
+        "created_at": get_current_ist_str()
     }
     admins.append(new_adm)
     cfg["admins"] = admins
@@ -368,7 +428,7 @@ def update_admin_account(admin_id, username, password, name=""):
     found["password"] = p_clean
     if name:
         found["name"] = str(name).strip()
-    found["updated_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    found["updated_at"] = get_current_ist_str()
 
     cfg["admins"] = admins
     save_config(cfg)
@@ -437,7 +497,7 @@ def create_approval_request(
     excel_bytes
 ):
     init_storage()
-    req_id = "REQ-" + time.strftime("%Y%m%d-") + secrets.token_hex(3).upper()
+    req_id = "REQ-" + get_current_ist_str("%Y%m%d-") + secrets.token_hex(3).upper()
 
     file_path = FILES_DIR / f"{req_id}.xlsx"
     with open(file_path, "wb") as f:
@@ -445,7 +505,7 @@ def create_approval_request(
 
     req_data = {
         "id": req_id,
-        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "created_at": get_current_ist_str(),
         "user_name": str(user_name or "Anonymous").strip(),
         "filename": original_filename,
         "target_date": target_date,
@@ -486,7 +546,7 @@ def approve_request(req_id):
     for r in all_requests:
         if r["id"] == req_id:
             r["status"] = "APPROVED"
-            r["approved_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            r["approved_at"] = get_current_ist_str()
             save_all_requests(all_requests)
             return True, r
     return False, None
@@ -529,12 +589,28 @@ def format_size(num_bytes):
         return f"{num_bytes} B"
 
 
-def list_all_releases():
+def load_local_releases_cache() -> list:
+    """Loads releases from local cache or initializes empty list."""
+    try:
+        if RELEASES_FILE.exists():
+            with open(RELEASES_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+    except Exception:
+        pass
+    return []
+
+
+def list_all_releases(public_view: bool = False):
     """
-    Lists all ActMaster zip releases directly from GitHub Releases API.
-    Guarantees releases NEVER disappear when Render redeploys or restarts.
+    Lists all ActMaster zip releases directly from GitHub Releases API + data-store releases.json.
+    Guarantees releases, download URLs, and passwords NEVER disappear when Render redeploys.
     """
     init_storage()
+    cached = load_local_releases_cache()
+    pw_map = {str(r.get("id")): str(r.get("download_password") or "").strip() for r in cached if r.get("download_password")}
+
     if GITHUB_TOKEN and requests:
         try:
             url = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
@@ -548,46 +624,66 @@ def list_all_releases():
                     sz = assets[0].get("size", 0) if assets else 0
                     dl_url = assets[0].get("browser_download_url") if assets else gr.get("html_url")
                     asset_id = assets[0].get("id") if assets else None
+                    rel_id = str(gr["id"])
+
+                    body_raw = gr.get("body") or ""
+                    clean_desc = body_raw
+                    pw = pw_map.get(rel_id, "")
+
+                    m = re.search(r"<!--\s*meta:\s*(\{.*?\})\s*-->", body_raw, re.DOTALL)
+                    if m:
+                        try:
+                            meta_info = json.loads(m.group(1))
+                            if not pw and meta_info.get("password"):
+                                pw = str(meta_info.get("password")).strip()
+                        except Exception:
+                            pass
+                        clean_desc = re.sub(r"<!--\s*meta:\s*(\{.*?\})\s*-->", "", body_raw, flags=re.DOTALL).strip()
+
+                    # Convert GitHub UTC ISO timestamp to Indian Standard Time (IST)
+                    created_ist = format_iso_to_ist(gr.get("published_at") or gr.get("created_at") or "")
 
                     parsed.append({
-                        "id": str(gr["id"]),
+                        "id": rel_id,
                         "filename": fn,
                         "stored_name": fn,
                         "title": gr.get("name") or fn,
-                        "description": gr.get("body") or "",
+                        "description": clean_desc,
                         "file_size": sz,
                         "file_size_formatted": format_size(sz),
                         "uploaded_by": "Master Admin (Kenil)",
-                        "created_at": (gr.get("published_at") or gr.get("created_at") or "").replace("T", " ")[:19],
+                        "created_at": created_ist,
                         "download_url": dl_url,
                         "asset_id": asset_id,
-                        "tag_name": gr.get("tag_name")
+                        "tag_name": gr.get("tag_name"),
+                        "download_password": pw,
+                        "has_password": bool(pw)
                     })
                 if parsed:
-                    # Cache locally
+                    # Update local cache
                     try:
                         with open(RELEASES_FILE, "w", encoding="utf-8") as f:
                             json.dump(parsed, f, indent=2, ensure_ascii=False)
                     except Exception:
                         pass
+                    
+                    if public_view:
+                        # Mask plain password from public response for security
+                        return [{**r, "download_password": ""} for r in parsed]
                     return parsed
         except Exception as exc:
             print(f"[Releases] GitHub API error: {exc}")
 
-    # Fallback: local releases.json cache
-    try:
-        with open(RELEASES_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            if isinstance(data, list):
-                return data
-            return []
-    except Exception:
-        return []
+    # Fallback to local cache
+    cached = load_local_releases_cache()
+    if public_view:
+        return [{**r, "download_password": ""} for r in cached]
+    return cached
 
 
-def save_release_file(original_filename, file_bytes, title="", description="", uploaded_by="Master Admin (Kenil)"):
+def save_release_file(original_filename, file_bytes, title="", description="", download_password="", uploaded_by="Master Admin (Kenil)"):
     """
-    Uploads the software zip file to GitHub Releases permanently.
+    Uploads the software zip file to GitHub Releases permanently with security password.
     Never gets wiped by Render redeployments!
     """
     init_storage()
@@ -598,16 +694,23 @@ def save_release_file(original_filename, file_bytes, title="", description="", u
 
     rel_title = (title or clean_orig).strip()
     rel_desc = (description or "").strip()
+    clean_pw = (download_password or "").strip()
+    now_ist = get_current_ist_str()
 
     # If GitHub token is configured, publish directly to GitHub Releases
     if GITHUB_TOKEN and requests:
         try:
-            tag_name = "v" + time.strftime("%Y%m%d-%H%M%S")
+            tag_name = "v" + get_current_ist_str("%Y%m%d-%H%M%S")
             create_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
+
+            body_with_meta = rel_desc
+            if clean_pw:
+                body_with_meta += f"\n\n<!-- meta: {json.dumps({'password': clean_pw})} -->"
+
             create_payload = {
                 "tag_name": tag_name,
                 "name": rel_title,
-                "body": rel_desc,
+                "body": body_with_meta,
                 "draft": False,
                 "prerelease": False
             }
@@ -644,17 +747,20 @@ def save_release_file(original_filename, file_bytes, title="", description="", u
                         "file_size": sz,
                         "file_size_formatted": format_size(sz),
                         "uploaded_by": uploaded_by,
-                        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                        "created_at": now_ist,
                         "download_url": dl_url,
                         "asset_id": asset_json.get("id"),
-                        "tag_name": tag_name
+                        "tag_name": tag_name,
+                        "download_password": clean_pw,
+                        "has_password": bool(clean_pw)
                     }
 
-                    # Update local cache
-                    cur = list_all_releases()
+                    # Update local cache & push to data-store branch
+                    cur = [r for r in load_local_releases_cache() if str(r.get("id")) != str(rel_id)]
                     cur.insert(0, meta)
                     with open(RELEASES_FILE, "w", encoding="utf-8") as f:
                         json.dump(cur, f, indent=2, ensure_ascii=False)
+                    async_cloud_push("releases.json", cur, f"Update releases with password: {rel_title}")
                     return meta
                 else:
                     print(f"[Releases] Asset upload error: {asset_resp.status_code} - {asset_resp.text}")
@@ -662,7 +768,7 @@ def save_release_file(original_filename, file_bytes, title="", description="", u
             print(f"[Releases] GitHub Release exception: {exc}")
 
     # Fallback: Save to local releases disk
-    rel_id = "REL-" + time.strftime("%Y%m%d-") + secrets.token_hex(3).upper()
+    rel_id = "REL-" + get_current_ist_str("%Y%m%d-") + secrets.token_hex(3).upper()
     stored_name = f"{rel_id}_{clean_orig}"
     file_path = RELEASES_DIR / stored_name
     with open(file_path, "wb") as f:
@@ -677,18 +783,68 @@ def save_release_file(original_filename, file_bytes, title="", description="", u
         "file_size": len(file_bytes),
         "file_size_formatted": format_size(len(file_bytes)),
         "uploaded_by": uploaded_by,
-        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "download_url": None
+        "created_at": now_ist,
+        "download_url": None,
+        "download_password": clean_pw,
+        "has_password": bool(clean_pw)
     }
-    cur = list_all_releases()
+    cur = [r for r in load_local_releases_cache() if str(r.get("id")) != str(rel_id)]
     cur.insert(0, meta)
     with open(RELEASES_FILE, "w", encoding="utf-8") as f:
         json.dump(cur, f, indent=2, ensure_ascii=False)
+    async_cloud_push("releases.json", cur, f"Update releases with password: {rel_title}")
     return meta
 
 
+def update_release_password(rel_id: str, new_password: str) -> bool:
+    """Updates the security download password for an existing release."""
+    init_storage()
+    clean_pw = (new_password or "").strip()
+    cur = load_local_releases_cache()
+    found = None
+    for r in cur:
+        if str(r.get("id")) == str(rel_id):
+            r["download_password"] = clean_pw
+            r["has_password"] = bool(clean_pw)
+            found = r
+            break
+    
+    if not found:
+        all_rels = list_all_releases(public_view=False)
+        for r in all_rels:
+            if str(r.get("id")) == str(rel_id):
+                r["download_password"] = clean_pw
+                r["has_password"] = bool(clean_pw)
+                found = r
+                cur.insert(0, r)
+                break
+
+    if not found:
+        return False
+
+    with open(RELEASES_FILE, "w", encoding="utf-8") as f:
+        json.dump(cur, f, indent=2, ensure_ascii=False)
+    async_cloud_push("releases.json", cur, f"Update password for release {rel_id}")
+
+    # Also update GitHub release body if possible
+    if GITHUB_TOKEN and requests and str(rel_id).isdigit():
+        try:
+            rel_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/{rel_id}"
+            get_r = requests.get(rel_url, headers=GITHUB_HEADERS, timeout=8)
+            if get_r.status_code == 200:
+                body = get_r.json().get("body") or ""
+                clean_body = re.sub(r"<!--\s*meta:\s*(\{.*?\})\s*-->", "", body, flags=re.DOTALL).strip()
+                if clean_pw:
+                    clean_body += f"\n\n<!-- meta: {json.dumps({'password': clean_pw})} -->"
+                requests.patch(rel_url, headers=GITHUB_HEADERS, json={"body": clean_body}, timeout=10)
+        except Exception as exc:
+            print(f"[Releases] Error updating release body on GitHub: {exc}")
+
+    return True
+
+
 def get_release_by_id(rel_id):
-    releases = list_all_releases()
+    releases = list_all_releases(public_view=False)
     for r in releases:
         if str(r.get("id")) == str(rel_id):
             return r
@@ -711,7 +867,7 @@ def get_release_file_path(rel_id):
 
 
 def delete_release_file(rel_id):
-    """Deletes a release from GitHub Releases and local cache."""
+    """Deletes a release from GitHub Releases, local cache, and data-store branch."""
     rel = get_release_by_id(rel_id)
     if not rel:
         raise ValueError("Release not found.")
@@ -735,9 +891,10 @@ def delete_release_file(rel_id):
         except Exception:
             pass
 
-    # Update local cache
-    cur = [r for r in list_all_releases() if str(r.get("id")) != str(rel_id)]
+    # Update local cache & sync to GitHub data-store branch
+    cur = [r for r in load_local_releases_cache() if str(r.get("id")) != str(rel_id)]
     with open(RELEASES_FILE, "w", encoding="utf-8") as f:
         json.dump(cur, f, indent=2, ensure_ascii=False)
+    async_cloud_push("releases.json", cur, f"Delete release {rel_id}")
 
     return True

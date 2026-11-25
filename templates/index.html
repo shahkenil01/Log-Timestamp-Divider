@@ -591,6 +591,17 @@
       border: 2px solid rgba(255, 255, 255, 0.3); border-top: 2px solid #ffffff; border-radius: 50%; width: 14px; height: 14px; animation: spin 0.8s linear infinite;
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .input-error {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+      animation: shake 0.35s ease-in-out;
+    }
   </style>
 </head>
 <body>
@@ -891,6 +902,56 @@
   </div>
 
   <!-- ===================================================================== -->
+  <!-- ZIP DOWNLOAD PASSWORD VERIFICATION MODAL                              -->
+  <!-- ===================================================================== -->
+  <div class="modal-overlay" id="zipPasswordModal">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #1e293b 0%, #0369a1 100%);">
+        <div>
+          <h3 style="color: #fff; margin: 0; font-size: 1.05rem;">🔐 Security Password Required</h3>
+          <p style="font-size: 0.775rem; color: #94a3b8; margin-top: 2px;">
+            This release is protected. Enter the password provided by Admin (Kenil).
+          </p>
+        </div>
+        <button class="btn-close-modal" id="btnCloseZipPasswordModal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 22px;">
+        <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+          <div style="font-size: 0.85rem; font-weight: 700; color: #0369a1;" id="pwdModalReleaseTitle">ActMaster Software</div>
+          <div style="font-size: 0.75rem; color: #0284c7; margin-top: 2px;" id="pwdModalReleaseFilename">📦 ActMaster.zip</div>
+        </div>
+        
+        <form id="zipPasswordForm">
+          <div class="form-group" style="text-align: left; margin-bottom: 14px;">
+            <label for="zipDownloadPasswordInput" style="font-size: 0.825rem; font-weight: 600;">
+              Enter Download Password <span style="color: #ef4444;">*</span>
+            </label>
+            <div style="position: relative;">
+              <input type="password" id="zipDownloadPasswordInput" class="input-highlight" placeholder="Enter password (provided by Kenil)" required style="padding-right: 42px;">
+              <button type="button" id="btnToggleZipPwdVisibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.1rem; color: var(--gray-500); padding: 0;">
+                👁️
+              </button>
+            </div>
+            <span id="zipPwdErrorText" style="display: none; color: #dc2626; font-size: 0.75rem; margin-top: 4px; font-weight: 600;">
+              ⚠️ Incorrect password! Please contact Admin (Kenil) for the password.
+            </span>
+          </div>
+
+          <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px;">
+            <button type="button" class="btn btn-secondary" style="width: auto; padding: 7px 16px; font-size: 0.8rem;" id="btnCancelZipPassword">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" style="width: auto; padding: 7px 20px; font-size: 0.8rem; background: #0284c7;" id="btnSubmitZipPassword">
+              <span id="zipPwdSpinner" class="spinner" style="display: none;"></span>
+              <span id="zipPwdBtnText">Verify & Download 🚀</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
   <!-- ADMIN & MASTER DASHBOARD MODAL                                        -->
   <!-- ===================================================================== -->
   <div class="modal-overlay" id="adminModal">
@@ -1139,6 +1200,12 @@
                   <textarea id="formReleaseDesc" rows="3" placeholder="Provide notes for your team: fixed bugs, new features, or setup instructions..."></textarea>
                 </div>
 
+                <div class="form-group">
+                  <label for="formReleasePassword">🔐 Download Security Password <span class="label-hint">(Password for team members to download)</span></label>
+                  <input type="text" id="formReleasePassword" placeholder="e.g. act2026 (Leave blank if open for all without password)">
+                  <span class="label-hint">If set, team members will be prompted for this password when clicking Download.</span>
+                </div>
+
                 <!-- Release Upload Progress Bar -->
                 <div id="releaseProgressContainer" class="upload-progress-container">
                   <div class="upload-progress-header">
@@ -1297,10 +1364,23 @@
     const formReleaseFile = document.getElementById('formReleaseFile');
     const formReleaseTitle = document.getElementById('formReleaseTitle');
     const formReleaseDesc = document.getElementById('formReleaseDesc');
+    const formReleasePassword = document.getElementById('formReleasePassword');
     const btnSubmitRelease = document.getElementById('btnSubmitRelease');
     const releaseUploadSpinner = document.getElementById('releaseUploadSpinner');
     const releaseUploadBtnText = document.getElementById('releaseUploadBtnText');
     const masterReleasesList = document.getElementById('masterReleasesList');
+
+    // Password Modal Elements
+    const zipPasswordModal = document.getElementById('zipPasswordModal');
+    const zipPasswordForm = document.getElementById('zipPasswordForm');
+    const zipDownloadPasswordInput = document.getElementById('zipDownloadPasswordInput');
+    const zipPwdErrorText = document.getElementById('zipPwdErrorText');
+    const btnSubmitZipPassword = document.getElementById('btnSubmitZipPassword');
+    const zipPwdSpinner = document.getElementById('zipPwdSpinner');
+    const zipPwdBtnText = document.getElementById('zipPwdBtnText');
+    const pwdModalReleaseTitle = document.getElementById('pwdModalReleaseTitle');
+    const pwdModalReleaseFilename = document.getElementById('pwdModalReleaseFilename');
+    let currentDownloadRelId = null;
 
     // Upload Progress Elements
     const approvalProgressContainer = document.getElementById('approvalProgressContainer');
@@ -1850,7 +1930,7 @@
           <tr>
             <td>
               <strong style="color: #2563eb;">#${r.id}</strong><br>
-              <span style="color: var(--gray-400); font-size: 0.7rem;">${r.created_at}</span>
+              <span style="color: var(--gray-400); font-size: 0.7rem;">${r.created_at ? r.created_at + ' IST' : ''}</span>
             </td>
             <td><strong>${r.user_name}</strong></td>
             <td>
@@ -2146,6 +2226,7 @@
       let html = '';
       releases.forEach((rel, idx) => {
         const isLatest = idx === 0;
+        const hasPw = Boolean(rel.has_password);
         html += `
           <div class="release-card-item">
             <div class="release-card-header">
@@ -2153,17 +2234,18 @@
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                   <span class="release-title-text">${escapeHtml(rel.title || rel.filename)}</span>
                   ${isLatest ? '<span style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 9999px;">LATEST</span>' : ''}
+                  ${hasPw ? '<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 9999px;">🔐 PASSWORD PROTECTED</span>' : ''}
                 </div>
                 <div>
                   <span class="release-filename-text">📦 ${escapeHtml(rel.filename)}</span>
                 </div>
               </div>
-              <a href="/api/releases/download/${rel.id}" class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 0.8rem; text-decoration: none; background: #0284c7; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);">
-                <span>📥 Download (${rel.file_size_formatted})</span>
-              </a>
+              <button type="button" class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 0.8rem; background: #0284c7; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);" onclick="handlePublicDownloadClick('${rel.id}', '${encodeURIComponent(rel.title || rel.filename)}', '${encodeURIComponent(rel.filename)}', ${hasPw ? 'true' : 'false'})">
+                <span>${hasPw ? '🔒 Enter Password & Download' : '📥 Download (' + rel.file_size_formatted + ')'}</span>
+              </button>
             </div>
             <div class="release-meta-row">
-              <span>📅 Uploaded: <strong>${rel.created_at || 'Recently'}</strong></span>
+              <span>📅 Uploaded: <strong>${rel.created_at ? rel.created_at + ' IST' : 'Recently'}</strong></span>
               <span>•</span>
               <span>👤 Released by: <strong>${escapeHtml(rel.uploaded_by || 'Kenil')}</strong></span>
               <span>•</span>
@@ -2179,6 +2261,85 @@
       });
       zipReleasesList.innerHTML = html;
     }
+
+    // Public Release Password Modal & Download Controller
+    window.handlePublicDownloadClick = function(relId, encTitle, encFname, hasPassword) {
+      const title = decodeURIComponent(encTitle);
+      const fname = decodeURIComponent(encFname);
+
+      if (!hasPassword) {
+        window.location.href = `/api/releases/download/${relId}`;
+        return;
+      }
+
+      currentDownloadRelId = relId;
+      pwdModalReleaseTitle.innerText = title;
+      pwdModalReleaseFilename.innerText = '📦 ' + fname;
+      zipDownloadPasswordInput.value = '';
+      zipDownloadPasswordInput.type = 'password';
+      zipPwdErrorText.style.display = 'none';
+      zipPasswordModal.classList.add('active');
+      setTimeout(() => zipDownloadPasswordInput.focus(), 150);
+    };
+
+    document.getElementById('btnCloseZipPasswordModal').addEventListener('click', () => {
+      zipPasswordModal.classList.remove('active');
+    });
+    document.getElementById('btnCancelZipPassword').addEventListener('click', () => {
+      zipPasswordModal.classList.remove('active');
+    });
+    document.getElementById('btnToggleZipPwdVisibility').addEventListener('click', () => {
+      zipDownloadPasswordInput.type = zipDownloadPasswordInput.type === 'password' ? 'text' : 'password';
+    });
+    zipPasswordModal.addEventListener('click', (e) => {
+      if (e.target === zipPasswordModal) zipPasswordModal.classList.remove('active');
+    });
+
+    zipPasswordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentDownloadRelId) return;
+
+      const pw = zipDownloadPasswordInput.value.trim();
+      if (!pw) {
+        zipPwdErrorText.innerText = '⚠️ Please enter the download password!';
+        zipPwdErrorText.style.display = 'block';
+        return;
+      }
+
+      btnSubmitZipPassword.disabled = true;
+      zipPwdSpinner.style.display = 'inline-block';
+      zipPwdBtnText.innerText = 'Verifying...';
+      zipPwdErrorText.style.display = 'none';
+
+      const formData = new FormData();
+      formData.append('release_id', currentDownloadRelId);
+      formData.append('password', pw);
+
+      try {
+        const resp = await fetch('/api/releases/verify-password', {
+          method: 'POST',
+          body: formData
+        });
+        const res = await resp.json();
+        if (!res.success) {
+          throw new Error(res.error || 'Incorrect password!');
+        }
+
+        showToast('Password verified! Starting download...');
+        zipPasswordModal.classList.remove('active');
+        window.location.href = res.download_url;
+      } catch (err) {
+        zipPwdErrorText.innerText = '⚠️ ' + err.message;
+        zipPwdErrorText.style.display = 'block';
+        zipDownloadPasswordInput.focus();
+        zipDownloadPasswordInput.classList.add('input-error');
+        setTimeout(() => zipDownloadPasswordInput.classList.remove('input-error'), 600);
+      } finally {
+        btnSubmitZipPassword.disabled = false;
+        zipPwdSpinner.style.display = 'none';
+        zipPwdBtnText.innerText = 'Verify & Download 🚀';
+      }
+    });
 
     // =========================================================================
     // MASTER ACTMASTER ZIP RELEASES CONTROLLER (Kenil Only)
@@ -2207,6 +2368,7 @@
       formReleaseFile.value = '';
       formReleaseTitle.value = '';
       formReleaseDesc.value = '';
+      if (formReleasePassword) formReleasePassword.value = '';
       formReleaseTitle.focus();
     });
 
@@ -2238,11 +2400,13 @@
 
       const file = formReleaseFile.files[0];
       const desc = formReleaseDesc.value.trim();
+      const pwd = formReleasePassword ? formReleasePassword.value.trim() : '';
 
       const formData = new FormData();
       formData.append('file', file);
       formData.append('title', title);
       formData.append('description', desc);
+      formData.append('download_password', pwd);
 
       btnSubmitRelease.disabled = true;
       releaseUploadSpinner.style.display = 'none';
@@ -2276,6 +2440,7 @@
         formReleaseFile.value = '';
         formReleaseTitle.value = '';
         formReleaseDesc.value = '';
+        if (formReleasePassword) formReleasePassword.value = '';
         loadMasterReleases();
       } catch (err) {
         showToast('Upload error: ' + err.message, true);
@@ -2294,7 +2459,9 @@
         </div>`;
 
       try {
-        const resp = await fetch('/api/releases');
+        const resp = await fetch('/api/master/releases', {
+          headers: { 'X-Master-Token': masterToken }
+        });
         const res = await resp.json();
         if (!res.success) throw new Error(res.error || 'Failed to fetch');
         renderMasterReleasesList(res.releases);
@@ -2314,6 +2481,7 @@
 
       let html = '';
       releases.forEach(rel => {
+        const hasPw = Boolean(rel.download_password && rel.download_password.trim());
         html += `
           <div class="release-card-item">
             <div class="release-card-header">
@@ -2323,8 +2491,11 @@
                   <span class="release-filename-text">📦 ${escapeHtml(rel.filename)}</span>
                 </div>
               </div>
-              <div style="display: flex; gap: 6px;">
-                <a href="/api/releases/download/${rel.id}" class="action-btn-sm action-btn-dl" style="text-decoration: none; padding: 5px 10px;">
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="action-btn-sm" style="padding: 5px 10px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;" onclick="promptEditPassword('${rel.id}', '${encodeURIComponent(rel.download_password || '')}')">
+                  🔑 ${hasPw ? 'Edit Password' : 'Set Password'}
+                </button>
+                <a href="/api/releases/download/${rel.id}?password=${encodeURIComponent(rel.download_password || '')}" class="action-btn-sm action-btn-dl" style="text-decoration: none; padding: 5px 10px;">
                   📥 Download (${rel.file_size_formatted})
                 </a>
                 <button type="button" class="action-btn-sm action-btn-reject" style="padding: 5px 10px;" onclick="deleteRelease('${rel.id}', '${encodeURIComponent(rel.title || rel.filename)}')">
@@ -2333,9 +2504,11 @@
               </div>
             </div>
             <div class="release-meta-row">
-              <span>📅 Uploaded: <strong>${rel.created_at || '—'}</strong></span>
+              <span>📅 Uploaded: <strong>${rel.created_at ? rel.created_at + ' IST' : '—'}</strong></span>
               <span>•</span>
               <span>💾 Size: <strong>${rel.file_size_formatted}</strong></span>
+              <span>•</span>
+              <span>🔐 Password: <strong style="color: ${hasPw ? '#b45309' : '#15803d'}; background: ${hasPw ? '#fef3c7' : '#dcfce7'}; padding: 2px 7px; border-radius: 4px;">${escapeHtml(rel.download_password || 'None (Open)')}</strong></span>
               <span>•</span>
               <span>ID: <code style="font-size: 0.72rem;">${rel.id}</code></span>
             </div>
@@ -2349,6 +2522,30 @@
       });
       masterReleasesList.innerHTML = html;
     }
+
+    window.promptEditPassword = async function(relId, encCurPw) {
+      const curPw = decodeURIComponent(encCurPw);
+      const newPw = prompt("Set or Change Download Password for this release:\n(Leave blank to allow open download without password)", curPw);
+      if (newPw === null) return;
+
+      const formData = new FormData();
+      formData.append('release_id', relId);
+      formData.append('password', newPw.trim());
+
+      try {
+        const resp = await fetch('/api/master/releases/update-password', {
+          method: 'POST',
+          headers: { 'X-Master-Token': masterToken },
+          body: formData
+        });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error || 'Failed to update password');
+        showToast(newPw.trim() ? `Password updated to '${newPw.trim()}'!` : 'Password removed (release is open)!');
+        loadMasterReleases();
+      } catch (err) {
+        showToast('Error updating password: ' + err.message, true);
+      }
+    };
 
     window.deleteRelease = async function(relId, encTitle) {
       const title = decodeURIComponent(encTitle);
