@@ -621,12 +621,12 @@
         <!-- 1. Combined Requester & File Upload Card -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">📁 1. Intern Details & Excel Upload</div>
+            <div class="card-title">📁 1. Your Details & Excel Upload</div>
           </div>
           <div class="card-body">
             <div class="form-row form-group" style="margin-bottom: 12px; align-items: flex-end;">
               <div>
-                <label for="userNameInput">Your Name / Intern Name <span style="color: #ef4444;">*</span></label>
+                <label for="userNameInput">Your Name <span style="color: #ef4444;">*</span></label>
                 <input type="text" id="userNameInput" class="input-highlight" placeholder="Enter your full name (e.g. Rahul Sharma)" required>
               </div>
               <div>
@@ -905,7 +905,7 @@
         <div class="login-box" id="adminLoginBox">
           <div style="font-size: 38px; margin-bottom: 8px;">🔐</div>
           <h3>Admin Login</h3>
-          <p>Sign in to review intern submissions and validate break times.</p>
+          <p>Sign in to review team submissions and validate break times.</p>
           <form id="adminLoginForm">
             <div class="form-group" style="text-align: left;">
               <label for="adminUsername">Admin Username</label>
@@ -1050,7 +1050,7 @@
           <!-- TAB 1: SUB-ADMIN ACCOUNTS -->
           <div id="masterTabAdmins">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <span style="font-size: 0.8rem; color: var(--gray-600);">Authorized admins who can review and approve intern timestamps:</span>
+              <span style="font-size: 0.8rem; color: var(--gray-600);">Authorized admins who can review and approve timestamps:</span>
               <button class="btn btn-primary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnOpenAddAdmin">
                 ➕ Add New Admin
               </button>
@@ -1548,7 +1548,7 @@
     btnSubmitApproval.addEventListener('click', async () => {
       const uName = userNameInput.value.trim();
       if (!uName) {
-        showToast('Please enter your Name / Intern Name first!', true);
+        showToast('Please enter your Name first!', true);
         userNameInput.focus();
         return;
       }

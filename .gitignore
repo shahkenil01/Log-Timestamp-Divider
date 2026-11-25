@@ -7,6 +7,8 @@ __pycache__/
 env/
 venv/
 *.tmp
+.github_token
+data/.github_token
 data/files/*.xlsx
 data/releases/*
 !data/releases/.gitkeep

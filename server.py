@@ -3,7 +3,7 @@
 Log Timestamp Divider - Web Server with Approval Workflow & Multi-Admin Management
 Features:
 1. Public preview (strictly limited to 50 rows).
-2. Intern / User approval submission with Requester Name.
+2. User / Team Member approval submission with Requester Name.
 3. Locked download (users CANNOT download until Admin approves).
 4. Protected Admin Dashboard with Date-wise filter & live status management.
 5. Master Admin Portal (Kenil / Canon) to Add, Edit, and Delete Admin accounts.
@@ -18,7 +18,7 @@ import webbrowser
 import threading
 from pathlib import Path
 from fastapi import FastAPI, File, UploadFile, Form, Header, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import io
@@ -163,7 +163,7 @@ async def submit_approval_request(
     """
     clean_user = str(user_name or "").strip()
     if not clean_user:
-        return JSONResponse({"success": False, "error": "Please provide your Name / Intern Name."}, status_code=400)
+        return JSONResponse({"success": False, "error": "Please provide your Name."}, status_code=400)
 
     try:
         content = await file.read()
@@ -424,6 +424,11 @@ async def download_release_file(release_id: str):
     rel = get_release_by_id(release_id)
     if not rel:
         raise HTTPException(status_code=404, detail="Release package not found.")
+    
+    # If GitHub Release CDN URL is present, redirect directly for fast cloud download with 0 server memory/disk load
+    if rel.get("download_url"):
+        return RedirectResponse(url=rel["download_url"], status_code=302)
+
     file_path = get_release_file_path(release_id)
     if not file_path or not file_path.exists():
         raise HTTPException(status_code=404, detail="Release file not found on disk.")
