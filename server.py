@@ -44,7 +44,12 @@ from storage import (
     load_all_requests,
     approve_request,
     reject_request,
-    get_request_excel_path
+    get_request_excel_path,
+    list_all_releases,
+    save_release_file,
+    get_release_by_id,
+    get_release_file_path,
+    delete_release_file
 )
 
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -397,6 +402,83 @@ async def master_delete_admin(
         return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
     try:
         delete_admin_account(admin_id)
+        return JSONResponse({"success": True})
+    except Exception as exc:
+        return JSONResponse({"success": False, "error": str(exc)}, status_code=400)
+
+
+# =============================================================================
+# ACTMASTER ZIP RELEASES & UPDATES API
+# =============================================================================
+
+@app.get("/api/releases")
+async def get_public_releases():
+    """Public endpoint to list all available ActMaster zip releases & updates."""
+    releases = list_all_releases()
+    return JSONResponse({"success": True, "releases": releases})
+
+
+@app.get("/api/releases/download/{release_id}")
+async def download_release_file(release_id: str):
+    """Public endpoint to download an ActMaster zip release package."""
+    rel = get_release_by_id(release_id)
+    if not rel:
+        raise HTTPException(status_code=404, detail="Release package not found.")
+    file_path = get_release_file_path(release_id)
+    if not file_path or not file_path.exists():
+        raise HTTPException(status_code=404, detail="Release file not found on disk.")
+    
+    orig_filename = rel.get("filename") or "ActMaster_Update.zip"
+    return FileResponse(
+        path=str(file_path),
+        filename=orig_filename,
+        media_type="application/octet-stream"
+    )
+
+
+@app.post("/api/master/releases/upload")
+async def master_upload_release(
+    file: UploadFile = File(...),
+    title: str = Form(""),
+    description: str = Form(""),
+    authorization: str = Header(None),
+    x_master_token: str = Header(None)
+):
+    """Master Admin uploads a new ActMaster zip release or update."""
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+    
+    try:
+        content = await file.read()
+        if not content:
+            return JSONResponse({"success": False, "error": "Cannot upload an empty file."}, status_code=400)
+        
+        rel_meta = save_release_file(
+            original_filename=file.filename,
+            file_bytes=content,
+            title=title,
+            description=description,
+            uploaded_by="Master Admin (Kenil)"
+        )
+        return JSONResponse({"success": True, "release": rel_meta})
+    except Exception as exc:
+        return JSONResponse({"success": False, "error": str(exc)}, status_code=400)
+
+
+@app.post("/api/master/releases/delete")
+async def master_delete_release(
+    release_id: str = Form(...),
+    authorization: str = Header(None),
+    x_master_token: str = Header(None)
+):
+    """Master Admin deletes an outdated release package."""
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+    
+    try:
+        delete_release_file(release_id)
         return JSONResponse({"success": True})
     except Exception as exc:
         return JSONResponse({"success": False, "error": str(exc)}, status_code=400)

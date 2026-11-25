@@ -82,6 +82,28 @@
 
     .header-actions { display: flex; align-items: center; gap: 12px; }
 
+    .btn-zip-nav {
+      background: #0284c7;
+      color: #ffffff;
+      border: 1px solid #0369a1;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.825rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);
+    }
+
+    .btn-zip-nav:hover {
+      background: #0369a1;
+      border-color: #075985;
+      transform: translateY(-1px);
+    }
+
     .btn-admin-nav {
       background: #1e293b;
       color: #ffffff;
@@ -101,6 +123,97 @@
       background: #0f172a;
       border-color: #475569;
       transform: translateY(-1px);
+    }
+
+    /* Master Tabs & Release Cards */
+    .master-nav-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 2px solid var(--gray-200);
+      margin-bottom: 16px;
+    }
+
+    .master-nav-tab {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: -2px;
+    }
+
+    .master-nav-tab:hover {
+      color: var(--gray-800);
+    }
+
+    .master-nav-tab.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+    }
+
+    .release-card-item {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .release-card-item:hover {
+      border-color: #93c5fd;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .release-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .release-title-text {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+
+    .release-filename-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.775rem;
+      color: #0284c7;
+      background: #f0f9ff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 3px;
+    }
+
+    .release-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .release-desc-box {
+      background: #f8fafc;
+      border-left: 3px solid #0284c7;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: var(--gray-700);
+      margin-top: 10px;
+      white-space: pre-wrap;
     }
 
     /* Main Container */
@@ -427,6 +540,9 @@
       </div>
     </div>
     <div class="header-actions">
+      <button class="btn-zip-nav" id="btnOpenZipModal" title="Download latest ActMaster Software Updates & Zip files">
+        <span>📦 ActMaster Zip Download</span>
+      </button>
       <button class="btn-admin-nav" id="btnOpenAdminModal">
         <span>🛡️ Admin Dashboard</span>
       </button>
@@ -673,6 +789,40 @@
   </main>
 
   <!-- ===================================================================== -->
+  <!-- PUBLIC ACTMASTER ZIP DOWNLOAD MODAL                                   -->
+  <!-- ===================================================================== -->
+  <div class="modal-overlay" id="zipModal">
+    <div class="modal-card" style="max-width: 760px;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #0f172a 0%, #0369a1 100%);">
+        <div>
+          <h2>📦 ActMaster Software Releases & Updates</h2>
+          <p style="font-size: 0.775rem; color: #cbd5e1; margin-top: 2px;">
+            Official software packages and zip updates uploaded by Kenil for team members.
+          </p>
+        </div>
+        <button class="btn-close-modal" id="btnCloseZipModal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <span style="font-size: 0.825rem; font-weight: 700; color: var(--gray-700);">
+            🚀 Available Packages & Updates
+          </span>
+          <button class="btn btn-secondary" style="width: auto; padding: 4px 12px; font-size: 0.75rem;" id="btnRefreshZipList">
+            🔄 Refresh
+          </button>
+        </div>
+
+        <!-- Releases Container -->
+        <div id="zipReleasesList" style="max-height: 480px; overflow-y: auto;">
+          <div style="text-align: center; color: var(--gray-400); padding: 36px;">
+            Loading available release files...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
   <!-- ADMIN & MASTER DASHBOARD MODAL                                        -->
   <!-- ===================================================================== -->
   <div class="modal-overlay" id="adminModal">
@@ -801,17 +951,15 @@
           </div>
         </div>
 
-        <!-- 4. MASTER ADMIN DASHBOARD VIEW (Kenil Account Manager) -->
+        <!-- 4. MASTER ADMIN DASHBOARD VIEW (Kenil Control Center) -->
         <div id="masterDashboardView" style="display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <!-- Top Header & Actions -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
             <div>
-              <h3 style="font-size: 1rem; font-weight: 700; color: var(--gray-900);">👑 Master Control Panel</h3>
-              <p style="font-size: 0.75rem; color: var(--gray-500);">Add, edit, or delete Admin accounts who can approve intern logs.</p>
+              <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--gray-900);">👑 Master Control Panel</h3>
+              <p style="font-size: 0.75rem; color: var(--gray-500);">Manage Sub-Admin credentials and publish ActMaster software zip packages.</p>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button class="btn btn-primary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnOpenAddAdmin">
-                ➕ Add New Admin
-              </button>
               <button class="btn btn-secondary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnBackToApprovals">
                 📋 View Approvals
               </button>
@@ -821,53 +969,128 @@
             </div>
           </div>
 
-          <!-- Add / Edit Admin Form Card (Collapsible) -->
-          <div id="adminFormCard" style="display: none; background: #f8fafc; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-            <h4 id="adminFormTitle" style="font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; color: #1e3a8a;">Add New Admin Account</h4>
-            <input type="hidden" id="editAdminId">
-            <div class="form-row" style="margin-bottom: 10px;">
-              <div>
-                <label for="formAdminUsername">Username <span style="color: #ef4444;">*</span></label>
-                <input type="text" id="formAdminUsername" placeholder="e.g. rahul_admin" required>
+          <!-- Master Tabs -->
+          <div class="master-nav-tabs">
+            <button type="button" class="master-nav-tab active" id="tabBtnAdmins">
+              👥 Sub-Admin Accounts
+            </button>
+            <button type="button" class="master-nav-tab" id="tabBtnReleases">
+              📦 ActMaster Zip Releases
+            </button>
+          </div>
+
+          <!-- TAB 1: SUB-ADMIN ACCOUNTS -->
+          <div id="masterTabAdmins">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 0.8rem; color: var(--gray-600);">Authorized admins who can review and approve intern timestamps:</span>
+              <button class="btn btn-primary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnOpenAddAdmin">
+                ➕ Add New Admin
+              </button>
+            </div>
+
+            <!-- Add / Edit Admin Form Card (Collapsible) -->
+            <div id="adminFormCard" style="display: none; background: #f8fafc; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+              <h4 id="adminFormTitle" style="font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; color: #1e3a8a;">Add New Admin Account</h4>
+              <input type="hidden" id="editAdminId">
+              <div class="form-row" style="margin-bottom: 10px;">
+                <div>
+                  <label for="formAdminUsername">Username <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="formAdminUsername" placeholder="e.g. rahul_admin" required>
+                </div>
+                <div>
+                  <label for="formAdminPassword">Password <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="formAdminPassword" placeholder="Enter password" required>
+                </div>
               </div>
-              <div>
-                <label for="formAdminPassword">Password <span style="color: #ef4444;">*</span></label>
-                <input type="text" id="formAdminPassword" placeholder="Enter password" required>
+              <div class="form-group" style="margin-bottom: 12px;">
+                <label for="formAdminName">Admin Name / Note</label>
+                <input type="text" id="formAdminName" placeholder="e.g. Rahul (Friend / Shift Incharge)">
+              </div>
+              <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnCancelAdminForm">
+                  Cancel
+                </button>
+                <button type="button" class="btn btn-success" style="width: auto; padding: 6px 16px; font-size: 0.78rem;" id="btnSaveAdminAccount">
+                  Save Admin
+                </button>
               </div>
             </div>
-            <div class="form-group" style="margin-bottom: 12px;">
-              <label for="formAdminName">Admin Name / Note</label>
-              <input type="text" id="formAdminName" placeholder="e.g. Rahul (Friend / Shift Incharge)">
-            </div>
-            <div style="display: flex; gap: 8px; justify-content: flex-end;">
-              <button type="button" class="btn btn-secondary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnCancelAdminForm">
-                Cancel
-              </button>
-              <button type="button" class="btn btn-success" style="width: auto; padding: 6px 16px; font-size: 0.78rem;" id="btnSaveAdminAccount">
-                Save Admin
-              </button>
+
+            <!-- Admin Accounts Table -->
+            <div style="max-height: 380px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 8px;">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Name / Note</th>
+                    <th>Created At</th>
+                    <th style="text-align: center;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="masterAdminsTableBody">
+                  <tr>
+                    <td colspan="5" style="text-align: center; color: var(--gray-400); padding: 24px;">Loading admins...</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <!-- Admin Accounts Table -->
-          <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 8px;">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>Username</th>
-                  <th>Password</th>
-                  <th>Name / Note</th>
-                  <th>Created At</th>
-                  <th style="text-align: center;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="masterAdminsTableBody">
-                <tr>
-                  <td colspan="5" style="text-align: center; color: var(--gray-400); padding: 24px;">Loading admins...</td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- TAB 2: ACTMASTER ZIP RELEASES -->
+          <div id="masterTabReleases" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--gray-900);">📦 Manage Release Zip Files</h4>
+                <p style="font-size: 0.75rem; color: var(--gray-500);">Upload new software zip files or updates for your team to download anytime.</p>
+              </div>
+              <button class="btn btn-primary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnOpenUploadRelease">
+                ➕ Upload New Release
+              </button>
+            </div>
+
+            <!-- Upload Release Form Card (Collapsible) -->
+            <div id="releaseFormCard" style="display: none; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+              <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 12px; color: #166534;">
+                🚀 Upload ActMaster Software / Update File
+              </h4>
+              <form id="releaseUploadForm">
+                <div class="form-group">
+                  <label for="formReleaseFile">Select File (.zip, .exe, .rar, etc.) <span style="color: #ef4444;">*</span></label>
+                  <input type="file" id="formReleaseFile" required>
+                  <span class="label-hint">Upload the software zip package or update archive.</span>
+                </div>
+
+                <div class="form-group">
+                  <label for="formReleaseTitle">Release Title / Version <span style="color: #ef4444;">*</span></label>
+                  <input type="text" id="formReleaseTitle" placeholder="e.g. ActMaster v5.2 - Auto Scraper & Fixes" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="formReleaseDesc">Release Notes / What's New</label>
+                  <textarea id="formReleaseDesc" rows="3" placeholder="Provide notes for your team: fixed bugs, new features, or setup instructions..."></textarea>
+                </div>
+
+                <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px;">
+                  <button type="button" class="btn btn-secondary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnCancelReleaseForm">
+                    Cancel
+                  </button>
+                  <button type="submit" class="btn btn-success" style="width: auto; padding: 6px 18px; font-size: 0.78rem;" id="btnSubmitRelease">
+                    <span id="releaseUploadSpinner" class="spinner" style="display: none;"></span>
+                    <span id="releaseUploadBtnText">Upload & Publish</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Releases List Container (Master view) -->
+            <div id="masterReleasesList" style="max-height: 400px; overflow-y: auto;">
+              <div style="text-align: center; color: var(--gray-400); padding: 30px;">
+                Loading uploaded releases...
+              </div>
+            </div>
           </div>
+
         </div>
 
       </div>
@@ -975,6 +1198,30 @@
     const btnCancelAdminForm = document.getElementById('btnCancelAdminForm');
     const btnSaveAdminAccount = document.getElementById('btnSaveAdminAccount');
     const masterAdminsTableBody = document.getElementById('masterAdminsTableBody');
+
+    // Public Zip Modal Elements
+    const zipModal = document.getElementById('zipModal');
+    const btnOpenZipModal = document.getElementById('btnOpenZipModal');
+    const btnCloseZipModal = document.getElementById('btnCloseZipModal');
+    const btnRefreshZipList = document.getElementById('btnRefreshZipList');
+    const zipReleasesList = document.getElementById('zipReleasesList');
+
+    // Master Dashboard Tabs & Release Management Elements
+    const tabBtnAdmins = document.getElementById('tabBtnAdmins');
+    const tabBtnReleases = document.getElementById('tabBtnReleases');
+    const masterTabAdmins = document.getElementById('masterTabAdmins');
+    const masterTabReleases = document.getElementById('masterTabReleases');
+    const btnOpenUploadRelease = document.getElementById('btnOpenUploadRelease');
+    const releaseFormCard = document.getElementById('releaseFormCard');
+    const btnCancelReleaseForm = document.getElementById('btnCancelReleaseForm');
+    const releaseUploadForm = document.getElementById('releaseUploadForm');
+    const formReleaseFile = document.getElementById('formReleaseFile');
+    const formReleaseTitle = document.getElementById('formReleaseTitle');
+    const formReleaseDesc = document.getElementById('formReleaseDesc');
+    const btnSubmitRelease = document.getElementById('btnSubmitRelease');
+    const releaseUploadSpinner = document.getElementById('releaseUploadSpinner');
+    const releaseUploadBtnText = document.getElementById('releaseUploadBtnText');
+    const masterReleasesList = document.getElementById('masterReleasesList');
 
     // Default target date
     const todayStr = new Date().toISOString().split('T')[0];
@@ -1333,7 +1580,11 @@
       hideAllModalViews();
       modalMainTitle.innerText = "👑 Master Admin Control Center (Kenil)";
       masterDashboardView.style.display = 'block';
-      loadMasterAdmins();
+      if (tabBtnReleases && tabBtnReleases.classList.contains('active')) {
+        switchMasterTab('releases');
+      } else {
+        switchMasterTab('admins');
+      }
     }
 
     // =========================================================================
@@ -1690,6 +1941,287 @@
         showToast(err.message, true);
       }
     };
+
+    // =========================================================================
+    // PUBLIC ACTMASTER ZIP DOWNLOAD MODAL CONTROLLER
+    // =========================================================================
+    btnOpenZipModal.addEventListener('click', () => {
+      zipModal.classList.add('active');
+      loadPublicReleases();
+    });
+
+    btnCloseZipModal.addEventListener('click', () => {
+      zipModal.classList.remove('active');
+    });
+
+    zipModal.addEventListener('click', (e) => {
+      if (e.target === zipModal) zipModal.classList.remove('active');
+    });
+
+    btnRefreshZipList.addEventListener('click', () => {
+      loadPublicReleases();
+    });
+
+    adminModal.addEventListener('click', (e) => {
+      if (e.target === adminModal) adminModal.classList.remove('active');
+    });
+
+    async function loadPublicReleases() {
+      zipReleasesList.innerHTML = `
+        <div style="text-align: center; color: var(--gray-400); padding: 36px;">
+          <div class="spinner" style="border-top-color: #0284c7; margin: 0 auto 10px auto; width: 22px; height: 22px;"></div>
+          Fetching available software releases...
+        </div>`;
+
+      try {
+        const resp = await fetch('/api/releases');
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error || 'Failed to fetch releases');
+        renderPublicReleases(res.releases);
+      } catch (err) {
+        zipReleasesList.innerHTML = `
+          <div style="text-align: center; color: #ef4444; padding: 24px;">
+            ⚠️ Failed to load software releases: ${escapeHtml(err.message)}
+          </div>`;
+      }
+    }
+
+    function renderPublicReleases(releases) {
+      if (!releases || releases.length === 0) {
+        zipReleasesList.innerHTML = `
+          <div style="text-align: center; padding: 40px 20px; background: #f8fafc; border: 1.5px dashed var(--gray-300); border-radius: 12px;">
+            <div style="font-size: 42px; margin-bottom: 8px;">📦</div>
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--gray-800); margin-bottom: 4px;">No Releases Available Yet</h4>
+            <p style="font-size: 0.8rem; color: var(--gray-500);">Kenil has not uploaded any software packages yet. Please check back later!</p>
+          </div>`;
+        return;
+      }
+
+      let html = '';
+      releases.forEach((rel, idx) => {
+        const isLatest = idx === 0;
+        html += `
+          <div class="release-card-item">
+            <div class="release-card-header">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span class="release-title-text">${escapeHtml(rel.title || rel.filename)}</span>
+                  ${isLatest ? '<span style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 9999px;">LATEST</span>' : ''}
+                </div>
+                <div>
+                  <span class="release-filename-text">📦 ${escapeHtml(rel.filename)}</span>
+                </div>
+              </div>
+              <a href="/api/releases/download/${rel.id}" class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 0.8rem; text-decoration: none; background: #0284c7; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);">
+                <span>📥 Download (${rel.file_size_formatted})</span>
+              </a>
+            </div>
+            <div class="release-meta-row">
+              <span>📅 Uploaded: <strong>${rel.created_at || 'Recently'}</strong></span>
+              <span>•</span>
+              <span>👤 Released by: <strong>${escapeHtml(rel.uploaded_by || 'Kenil')}</strong></span>
+              <span>•</span>
+              <span>💾 Size: <strong>${rel.file_size_formatted}</strong></span>
+            </div>
+            ${rel.description ? `
+              <div class="release-desc-box">
+                <div style="font-weight: 700; font-size: 0.75rem; color: #0369a1; margin-bottom: 3px;">📝 Release Notes & Instructions:</div>
+                ${escapeHtml(rel.description)}
+              </div>` : ''}
+          </div>
+        `;
+      });
+      zipReleasesList.innerHTML = html;
+    }
+
+    // =========================================================================
+    // MASTER ACTMASTER ZIP RELEASES CONTROLLER (Kenil Only)
+    // =========================================================================
+    function switchMasterTab(tab) {
+      if (tab === 'admins') {
+        tabBtnAdmins.classList.add('active');
+        tabBtnReleases.classList.remove('active');
+        masterTabAdmins.style.display = 'block';
+        masterTabReleases.style.display = 'none';
+        loadMasterAdmins();
+      } else {
+        tabBtnReleases.classList.add('active');
+        tabBtnAdmins.classList.remove('active');
+        masterTabReleases.style.display = 'block';
+        masterTabAdmins.style.display = 'none';
+        loadMasterReleases();
+      }
+    }
+
+    tabBtnAdmins.addEventListener('click', () => switchMasterTab('admins'));
+    tabBtnReleases.addEventListener('click', () => switchMasterTab('releases'));
+
+    btnOpenUploadRelease.addEventListener('click', () => {
+      releaseFormCard.style.display = 'block';
+      formReleaseFile.value = '';
+      formReleaseTitle.value = '';
+      formReleaseDesc.value = '';
+      formReleaseTitle.focus();
+    });
+
+    btnCancelReleaseForm.addEventListener('click', () => {
+      releaseFormCard.style.display = 'none';
+    });
+
+    // Auto-fill release title from uploaded filename
+    formReleaseFile.addEventListener('change', () => {
+      if (formReleaseFile.files && formReleaseFile.files.length > 0) {
+        const fname = formReleaseFile.files[0].name;
+        if (!formReleaseTitle.value) {
+          formReleaseTitle.value = fname.replace(/\.[^/.]+$/, "");
+        }
+      }
+    });
+
+    releaseUploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!formReleaseFile.files || formReleaseFile.files.length === 0) {
+        showToast('Please select a file to upload!', true);
+        return;
+      }
+      const title = formReleaseTitle.value.trim();
+      if (!title) {
+        showToast('Please enter a release title or version!', true);
+        return;
+      }
+
+      const file = formReleaseFile.files[0];
+      const desc = formReleaseDesc.value.trim();
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('title', title);
+      formData.append('description', desc);
+
+      btnSubmitRelease.disabled = true;
+      releaseUploadSpinner.style.display = 'inline-block';
+      releaseUploadBtnText.innerText = 'Uploading...';
+
+      try {
+        const resp = await fetch('/api/master/releases/upload', {
+          method: 'POST',
+          headers: { 'X-Master-Token': masterToken },
+          body: formData
+        });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error || 'Upload failed');
+
+        showToast('Release uploaded and published successfully!');
+        releaseFormCard.style.display = 'none';
+        formReleaseFile.value = '';
+        formReleaseTitle.value = '';
+        formReleaseDesc.value = '';
+        loadMasterReleases();
+      } catch (err) {
+        showToast('Upload error: ' + err.message, true);
+      } finally {
+        btnSubmitRelease.disabled = false;
+        releaseUploadSpinner.style.display = 'none';
+        releaseUploadBtnText.innerText = 'Upload & Publish';
+      }
+    });
+
+    async function loadMasterReleases() {
+      masterReleasesList.innerHTML = `
+        <div style="text-align: center; color: var(--gray-400); padding: 30px;">
+          <div class="spinner" style="border-top-color: #2563eb; margin: 0 auto 10px auto; width: 20px; height: 20px;"></div>
+          Loading uploaded releases...
+        </div>`;
+
+      try {
+        const resp = await fetch('/api/releases');
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error || 'Failed to fetch');
+        renderMasterReleasesList(res.releases);
+      } catch (err) {
+        masterReleasesList.innerHTML = `<div style="text-align: center; color: #ef4444; padding: 20px;">Failed to load releases: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderMasterReleasesList(releases) {
+      if (!releases || releases.length === 0) {
+        masterReleasesList.innerHTML = `
+          <div style="text-align: center; color: var(--gray-400); padding: 30px; background: #f8fafc; border: 1px dashed var(--gray-300); border-radius: 8px;">
+            No software releases uploaded yet. Click <strong>➕ Upload New Release</strong> to upload your first zip file!
+          </div>`;
+        return;
+      }
+
+      let html = '';
+      releases.forEach(rel => {
+        html += `
+          <div class="release-card-item">
+            <div class="release-card-header">
+              <div>
+                <span class="release-title-text">${escapeHtml(rel.title || rel.filename)}</span>
+                <div>
+                  <span class="release-filename-text">📦 ${escapeHtml(rel.filename)}</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <a href="/api/releases/download/${rel.id}" class="action-btn-sm action-btn-dl" style="text-decoration: none; padding: 5px 10px;">
+                  📥 Download (${rel.file_size_formatted})
+                </a>
+                <button type="button" class="action-btn-sm action-btn-reject" style="padding: 5px 10px;" onclick="deleteRelease('${rel.id}', '${encodeURIComponent(rel.title || rel.filename)}')">
+                  🗑️ Delete
+                </button>
+              </div>
+            </div>
+            <div class="release-meta-row">
+              <span>📅 Uploaded: <strong>${rel.created_at || '—'}</strong></span>
+              <span>•</span>
+              <span>💾 Size: <strong>${rel.file_size_formatted}</strong></span>
+              <span>•</span>
+              <span>ID: <code style="font-size: 0.72rem;">${rel.id}</code></span>
+            </div>
+            ${rel.description ? `
+              <div class="release-desc-box">
+                <div style="font-weight: 700; font-size: 0.75rem; color: #0369a1; margin-bottom: 2px;">Release Notes:</div>
+                ${escapeHtml(rel.description)}
+              </div>` : ''}
+          </div>
+        `;
+      });
+      masterReleasesList.innerHTML = html;
+    }
+
+    window.deleteRelease = async function(relId, encTitle) {
+      const title = decodeURIComponent(encTitle);
+      if (!confirm(`Are you sure you want to delete release '${title}'?\n\nThis will remove the file and team members will no longer be able to download it.`)) return;
+
+      const formData = new FormData();
+      formData.append('release_id', relId);
+
+      try {
+        const resp = await fetch('/api/master/releases/delete', {
+          method: 'POST',
+          headers: { 'X-Master-Token': masterToken },
+          body: formData
+        });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error || 'Failed to delete release');
+
+        showToast(`Release '${title}' deleted successfully!`);
+        loadMasterReleases();
+      } catch (err) {
+        showToast('Error deleting release: ' + err.message, true);
+      }
+    };
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
 
     // Initial timeline
     updateTimelineVisuals();

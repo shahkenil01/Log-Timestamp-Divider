@@ -8,3 +8,5 @@ env/
 venv/
 *.tmp
 data/files/*.xlsx
+data/releases/*
+!data/releases/.gitkeep

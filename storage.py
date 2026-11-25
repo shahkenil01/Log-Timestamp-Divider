@@ -16,8 +16,10 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 FILES_DIR = DATA_DIR / "files"
+RELEASES_DIR = DATA_DIR / "releases"
 REQUESTS_FILE = DATA_DIR / "requests.json"
 CONFIG_FILE = DATA_DIR / "admin_config.json"
+RELEASES_FILE = DATA_DIR / "releases.json"
 
 # Master Admin Credentials (Kenil / Canon)
 MASTER_USERNAMES = ["kenil", "canon", "shahkenil01"]
@@ -31,9 +33,23 @@ def init_storage():
     """Ensure data directories and request store exist."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     FILES_DIR.mkdir(parents=True, exist_ok=True)
+    RELEASES_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Ensure .gitkeep in releases dir so git tracks it
+    gitkeep = RELEASES_DIR / ".gitkeep"
+    if not gitkeep.exists():
+        try:
+            with open(gitkeep, "w", encoding="utf-8") as f:
+                f.write("")
+        except Exception:
+            pass
 
     if not REQUESTS_FILE.exists():
         with open(REQUESTS_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f, indent=2)
+
+    if not RELEASES_FILE.exists():
+        with open(RELEASES_FILE, "w", encoding="utf-8") as f:
             json.dump([], f, indent=2)
 
     # Initialize or migrate admin_config.json
@@ -360,3 +376,133 @@ def get_request_excel_path(req_id):
     if file_path.exists():
         return file_path
     return None
+
+
+# =============================================================================
+# ACTMASTER ZIP RELEASES & UPDATES MANAGEMENT
+# =============================================================================
+
+def format_size(num_bytes):
+    """Format byte size into human readable string (KB, MB, GB)."""
+    try:
+        b = float(num_bytes)
+        if b < 1024:
+            return f"{int(b)} B"
+        elif b < 1024 * 1024:
+            return f"{(b / 1024):.1f} KB"
+        elif b < 1024 * 1024 * 1024:
+            return f"{(b / (1024 * 1024)):.1f} MB"
+        else:
+            return f"{(b / (1024 * 1024 * 1024)):.2f} GB"
+    except Exception:
+        return f"{num_bytes} B"
+
+
+def list_all_releases():
+    """List all uploaded software releases/zip updates."""
+    init_storage()
+    try:
+        with open(RELEASES_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                return data
+            return []
+    except Exception:
+        return []
+
+
+def save_release_file(original_filename, file_bytes, title="", description="", uploaded_by="Master Admin"):
+    """Saves an uploaded zip/software file and records metadata."""
+    init_storage()
+    clean_orig = Path(original_filename or "ActMaster_Update.zip").name.strip()
+    # Sanitize filename: allow alphanumeric, dots, hyphens, underscores, spaces
+    clean_orig = "".join(c for c in clean_orig if c.isalnum() or c in "._- ")
+    if not clean_orig:
+        clean_orig = "ActMaster_Update.zip"
+
+    rel_id = "REL-" + time.strftime("%Y%m%d-") + secrets.token_hex(3).upper()
+    stored_name = f"{rel_id}_{clean_orig}"
+    file_path = RELEASES_DIR / stored_name
+
+    with open(file_path, "wb") as f:
+        f.write(file_bytes)
+
+    rel_meta = {
+        "id": rel_id,
+        "filename": clean_orig,
+        "stored_name": stored_name,
+        "title": (title or clean_orig).strip(),
+        "description": (description or "").strip(),
+        "file_size": len(file_bytes),
+        "file_size_formatted": format_size(len(file_bytes)),
+        "uploaded_by": uploaded_by,
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    releases = list_all_releases()
+    releases.insert(0, rel_meta)
+
+    with open(RELEASES_FILE, "w", encoding="utf-8") as f:
+        json.dump(releases, f, indent=2, ensure_ascii=False)
+
+    return rel_meta
+
+
+def get_release_by_id(rel_id):
+    releases = list_all_releases()
+    for r in releases:
+        if r.get("id") == rel_id:
+            return r
+    return None
+
+
+def get_release_file_path(rel_id):
+    r = get_release_by_id(rel_id)
+    if not r:
+        return None
+    stored_name = r.get("stored_name")
+    if stored_name:
+        p = RELEASES_DIR / stored_name
+        if p.exists():
+            return p
+    # Fallback: check matching rel_id prefix in RELEASES_DIR
+    for f in RELEASES_DIR.glob(f"{rel_id}*"):
+        if f.is_file():
+            return f
+    return None
+
+
+def delete_release_file(rel_id):
+    releases = list_all_releases()
+    found = None
+    new_list = []
+    for r in releases:
+        if r.get("id") == rel_id:
+            found = r
+        else:
+            new_list.append(r)
+
+    if not found:
+        raise ValueError("Release not found.")
+
+    # Remove physical file if exists
+    stored_name = found.get("stored_name")
+    if stored_name:
+        p = RELEASES_DIR / stored_name
+        if p.exists():
+            try:
+                p.unlink()
+            except Exception:
+                pass
+
+    # Also cleanup any matching files
+    for f in RELEASES_DIR.glob(f"{rel_id}*"):
+        try:
+            f.unlink()
+        except Exception:
+            pass
+
+    with open(RELEASES_FILE, "w", encoding="utf-8") as f:
+        json.dump(new_list, f, indent=2, ensure_ascii=False)
+
+    return True
