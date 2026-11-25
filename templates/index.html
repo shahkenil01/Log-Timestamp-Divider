@@ -13,8 +13,10 @@
       --primary-hover: #1d4ed8;
       --primary-light: #eff6ff;
       --success: #10b981;
+      --success-hover: #059669;
       --warning: #f59e0b;
       --danger: #ef4444;
+      --danger-hover: #dc2626;
       --gray-50: #f8fafc;
       --gray-100: #f1f5f9;
       --gray-200: #e2e8f0;
@@ -50,7 +52,7 @@
     header {
       background: #ffffff;
       border-bottom: 1px solid var(--gray-200);
-      padding: 16px 32px;
+      padding: 14px 28px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -87,36 +89,42 @@
     }
 
     .brand-text p {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--gray-500);
     }
 
-    .badge-status {
-      display: inline-flex;
+    .header-actions {
+      display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      background: #dcfce7;
-      color: #15803d;
-      font-size: 0.75rem;
-      font-weight: 600;
-      border-radius: 9999px;
-      border: 1px solid #bbf7d0;
+      gap: 12px;
     }
 
-    .badge-status::before {
-      content: '';
-      width: 7px;
-      height: 7px;
-      background: #16a34a;
-      border-radius: 50%;
+    .btn-admin-nav {
+      background: #1e293b;
+      color: #ffffff;
+      border: 1px solid #334155;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.825rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-admin-nav:hover {
+      background: #0f172a;
+      border-color: #475569;
+      transform: translateY(-1px);
     }
 
     /* Main Container */
     main {
-      max-width: 1200px;
-      margin: 28px auto 0 auto;
-      padding: 0 24px;
+      max-width: 1220px;
+      margin: 24px auto 0 auto;
+      padding: 0 20px;
     }
 
     .grid-2 {
@@ -132,7 +140,7 @@
       }
     }
 
-    /* Card styling */
+    /* Cards */
     .card {
       background: #ffffff;
       border: 1px solid var(--gray-200);
@@ -148,7 +156,7 @@
     }
 
     .card-header {
-      padding: 16px 20px;
+      padding: 14px 18px;
       border-bottom: 1px solid var(--gray-200);
       background: #ffffff;
       display: flex;
@@ -157,7 +165,7 @@
     }
 
     .card-title {
-      font-size: 0.95rem;
+      font-size: 0.925rem;
       font-weight: 700;
       color: var(--gray-800);
       display: flex;
@@ -166,7 +174,7 @@
     }
 
     .card-body {
-      padding: 20px;
+      padding: 18px;
     }
 
     /* Dropzone */
@@ -174,7 +182,7 @@
       border: 2px dashed var(--gray-300);
       background: var(--gray-50);
       border-radius: 12px;
-      padding: 32px 20px;
+      padding: 26px 16px;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -187,20 +195,20 @@
     }
 
     .dropzone-icon {
-      font-size: 40px;
-      margin-bottom: 12px;
+      font-size: 36px;
+      margin-bottom: 8px;
       color: var(--primary);
     }
 
     .dropzone h3 {
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 600;
       color: var(--gray-800);
       margin-bottom: 4px;
     }
 
     .dropzone p {
-      font-size: 0.825rem;
+      font-size: 0.8rem;
       color: var(--gray-500);
     }
 
@@ -214,7 +222,6 @@
       cursor: pointer;
     }
 
-    /* File Info Box */
     .file-badge {
       display: flex;
       align-items: center;
@@ -222,28 +229,24 @@
       background: #eff6ff;
       border: 1px solid #bfdbfe;
       border-radius: 8px;
-      padding: 12px 16px;
-      margin-top: 14px;
+      padding: 10px 14px;
+      margin-top: 12px;
     }
 
     .file-badge-left {
       display: flex;
       align-items: center;
-      gap: 12px;
-    }
-
-    .file-badge-icon {
-      font-size: 24px;
+      gap: 10px;
     }
 
     .file-badge-title {
       font-weight: 600;
-      font-size: 0.875rem;
+      font-size: 0.85rem;
       color: #1e3a8a;
     }
 
     .file-badge-meta {
-      font-size: 0.75rem;
+      font-size: 0.725rem;
       color: #3b82f6;
     }
 
@@ -253,8 +256,6 @@
       color: var(--gray-400);
       font-size: 18px;
       cursor: pointer;
-      padding: 4px;
-      border-radius: 4px;
     }
 
     .btn-remove-file:hover {
@@ -263,7 +264,7 @@
 
     /* Form Fields */
     .form-group {
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .form-row {
@@ -272,34 +273,29 @@
       gap: 12px;
     }
 
-    .form-row-3 {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px;
-    }
-
     label {
       display: block;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--gray-700);
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
 
     .label-hint {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 400;
       color: var(--gray-500);
       margin-left: 4px;
     }
 
     input[type="text"],
+    input[type="password"],
     input[type="date"],
     input[type="time"],
     input[type="number"],
     select {
       width: 100%;
-      padding: 9px 12px;
+      padding: 8px 12px;
       border: 1px solid var(--gray-300);
       border-radius: 8px;
       font-size: 0.85rem;
@@ -315,11 +311,16 @@
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
     }
 
+    .input-highlight {
+      border: 1.5px solid #2563eb !important;
+      background: #f8faff !important;
+    }
+
     .checkbox-group {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-top: 8px;
+      margin-top: 6px;
       cursor: pointer;
     }
 
@@ -331,36 +332,36 @@
     }
 
     .checkbox-group span {
-      font-size: 0.825rem;
+      font-size: 0.8rem;
       color: var(--gray-700);
       font-weight: 500;
     }
 
-    /* Break box highlight */
+    /* Break Highlight Cards */
     .break-card {
       background: #fffbeb;
       border: 1px solid #fde68a;
       border-radius: 8px;
-      padding: 12px 14px;
+      padding: 10px 12px;
       margin-bottom: 12px;
     }
 
     .break-card-title {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: #92400e;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
-    /* Stats Grid */
+    /* Stats Bar */
     .stats-bar {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 20px;
+      gap: 10px;
+      margin-bottom: 18px;
     }
 
     @media (max-width: 650px) {
@@ -372,46 +373,46 @@
     .stat-box {
       background: var(--gray-50);
       border: 1px solid var(--gray-200);
-      border-radius: 10px;
-      padding: 12px;
+      border-radius: 8px;
+      padding: 10px;
       text-align: center;
     }
 
     .stat-label {
-      font-size: 0.725rem;
+      font-size: 0.7rem;
       font-weight: 600;
       color: var(--gray-500);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
     }
 
     .stat-value {
-      font-size: 1.35rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: var(--gray-900);
-      margin-top: 4px;
+      margin-top: 3px;
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Timeline Bar */
+    /* Timeline */
     .timeline-container {
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .timeline-header {
       display: flex;
       justify-content: space-between;
-      font-size: 0.75rem;
+      font-size: 0.725rem;
       color: var(--gray-500);
       font-weight: 600;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
 
     .timeline-track {
       position: relative;
-      height: 26px;
+      height: 24px;
       background: #e2e8f0;
-      border-radius: 13px;
+      border-radius: 12px;
       overflow: hidden;
       display: flex;
     }
@@ -420,25 +421,16 @@
       background: linear-gradient(90deg, #3b82f6, #2563eb);
       height: 100%;
       position: relative;
-      transition: width 0.3s ease;
     }
 
     .timeline-seg-break {
-      background: repeating-linear-gradient(
-        45deg,
-        #f59e0b,
-        #f59e0b 8px,
-        #d97706 8px,
-        #d97706 16px
-      );
+      background: repeating-linear-gradient(45deg, #f59e0b, #f59e0b 8px, #d97706 8px, #d97706 16px);
       height: 100%;
-      position: relative;
-      transition: width 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #ffffff;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 700;
       text-shadow: 0 1px 2px rgba(0,0,0,0.4);
     }
@@ -446,8 +438,8 @@
     .timeline-ticks {
       display: flex;
       justify-content: space-between;
-      margin-top: 6px;
-      font-size: 0.72rem;
+      margin-top: 5px;
+      font-size: 0.7rem;
       font-weight: 500;
       color: var(--gray-600);
       font-family: 'JetBrains Mono', monospace;
@@ -455,7 +447,7 @@
 
     /* Preview Table */
     .table-container {
-      max-height: 380px;
+      max-height: 340px;
       overflow-y: auto;
       border: 1px solid var(--gray-200);
       border-radius: 8px;
@@ -464,7 +456,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       text-align: left;
     }
 
@@ -472,7 +464,7 @@
       background: #f8fafc;
       color: var(--gray-700);
       font-weight: 600;
-      padding: 10px 14px;
+      padding: 9px 12px;
       border-bottom: 1px solid var(--gray-200);
       position: sticky;
       top: 0;
@@ -480,7 +472,7 @@
     }
 
     tbody td {
-      padding: 8px 14px;
+      padding: 7px 12px;
       border-bottom: 1px solid var(--gray-100);
       color: var(--gray-800);
     }
@@ -489,13 +481,8 @@
       background: #f8fafc;
     }
 
-    tbody tr:hover {
-      background: #f1f5f9;
-    }
-
     .mono-cell {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
     }
 
     .new-ts-cell {
@@ -509,9 +496,9 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 10px 20px;
+      padding: 10px 18px;
       border-radius: 8px;
-      font-size: 0.875rem;
+      font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
       border: none;
@@ -520,14 +507,13 @@
     }
 
     .btn-primary {
-      background: var(--primary);
+      background: #2563eb;
       color: #ffffff;
       box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: var(--primary-hover);
-      box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+      background: #1d4ed8;
       transform: translateY(-1px);
     }
 
@@ -542,6 +528,26 @@
       border-color: var(--gray-400);
     }
 
+    .btn-success {
+      background: #10b981;
+      color: #ffffff;
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.25);
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: #059669;
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: #ffffff;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #dc2626;
+    }
+
     .btn:disabled {
       opacity: 0.6;
       cursor: not-allowed;
@@ -552,29 +558,259 @@
       display: grid;
       grid-template-columns: 1fr 1.6fr;
       gap: 12px;
-      margin-top: 18px;
+      margin-top: 16px;
     }
 
-    /* Theme Option Callout */
-    .theme-card {
+    /* Approval Status Tracking Box */
+    .approval-card {
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-top: 16px;
+      border: 1px solid;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .approval-pending {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .approval-approved {
       background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 8px;
-      padding: 12px 14px;
-      margin-top: 14px;
+      border-color: #86efac;
     }
 
-    .theme-card-title {
-      font-size: 0.8rem;
+    .approval-rejected {
+      background: #fef2f2;
+      border-color: #fca5a5;
+    }
+
+    .approval-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
       font-weight: 700;
-      color: #166534;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-pending {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .badge-approved {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .badge-rejected {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    /* Modal / Admin Overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 950px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: scale(0.96);
+      transition: transform 0.25s ease;
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--gray-200);
+      background: #0f172a;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-header h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-close-modal {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .btn-close-modal:hover {
+      color: #ffffff;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* Admin Login Box */
+    .login-box {
+      max-width: 380px;
+      margin: 40px auto;
+      padding: 24px;
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .login-box h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gray-900);
       margin-bottom: 4px;
+    }
+
+    .login-box p {
+      font-size: 0.8rem;
+      color: var(--gray-500);
+      margin-bottom: 20px;
+    }
+
+    /* Admin Requests Table */
+    .admin-stats {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .admin-stat-pill {
+      padding: 8px 14px;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
-    /* Notification Toast */
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.775rem;
+    }
+
+    .admin-table th {
+      background: #f1f5f9;
+      color: var(--gray-700);
+      font-weight: 600;
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--gray-300);
+      text-align: left;
+    }
+
+    .admin-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--gray-200);
+      vertical-align: middle;
+    }
+
+    .admin-table tr:hover {
+      background: #f8fafc;
+    }
+
+    .action-btn-sm {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-right: 4px;
+    }
+
+    .action-btn-approve {
+      background: #10b981;
+      color: #ffffff;
+    }
+
+    .action-btn-approve:hover {
+      background: #059669;
+    }
+
+    .action-btn-reject {
+      background: #ef4444;
+      color: #ffffff;
+    }
+
+    .action-btn-reject:hover {
+      background: #dc2626;
+    }
+
+    .action-btn-dl {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .action-btn-dl:hover {
+      background: #1d4ed8;
+    }
+
+    /* Toast */
     .toast {
       position: fixed;
       bottom: 24px;
@@ -589,7 +825,7 @@
       transform: translateY(100px);
       opacity: 0;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: 1000;
+      z-index: 2000;
     }
 
     .toast.show {
@@ -597,22 +833,15 @@
       opacity: 1;
     }
 
-    .toast.toast-success {
-      background: #166534;
-      border: 1px solid #22c55e;
-    }
-
-    .toast.toast-error {
-      background: #991b1b;
-      border: 1px solid #ef4444;
-    }
+    .toast-success { background: #166534; border: 1px solid #22c55e; }
+    .toast-error { background: #991b1b; border: 1px solid #ef4444; }
 
     .spinner {
       border: 2px solid rgba(255, 255, 255, 0.3);
       border-top: 2px solid #ffffff;
       border-radius: 50%;
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       animation: spin 0.8s linear infinite;
     }
 
@@ -630,34 +859,50 @@
       <div class="brand-icon">⏱️</div>
       <div class="brand-text">
         <h1>Log Timestamp Divider</h1>
-        <p>Distribute daily log timestamps across your complete shift with break exclusions</p>
+        <p>Smart shift workload distribution • Approval workflow enabled</p>
       </div>
     </div>
-    <div>
-      <span class="badge-status">Offline Active</span>
+    <div class="header-actions">
+      <button class="btn-admin-nav" id="btnOpenAdminModal">
+        <span>🛡️ Admin Dashboard</span>
+      </button>
     </div>
   </header>
 
   <main>
     <div class="grid-2">
-      <!-- Left Column: Inputs & Configuration -->
+      <!-- Left Column: Inputs & Request Form -->
       <section>
+        <!-- User Name Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👤 1. Intern / Requester Details</div>
+          </div>
+          <div class="card-body">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="userNameInput">Your Name / Intern Name <span style="color: #ef4444;">*</span></label>
+              <input type="text" id="userNameInput" class="input-highlight" placeholder="Enter your full name (e.g. Rahul Sharma)" required>
+              <span class="label-hint">Admin will see this name on the dashboard to validate your work.</span>
+            </div>
+          </div>
+        </div>
+
         <!-- File Upload Card -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">📁 1. Upload Log Excel File</div>
+            <div class="card-title">📁 2. Upload Log Excel File</div>
           </div>
           <div class="card-body">
             <div class="dropzone" id="dropzone">
               <input type="file" id="fileInput" accept=".xlsx, .xls">
               <div class="dropzone-icon">📊</div>
               <h3>Drag & drop your Excel log here</h3>
-              <p>or click to browse from computer (.xlsx, .xls)</p>
+              <p>or click to browse (.xlsx, .xls)</p>
             </div>
 
             <div id="fileInfoBox" class="file-badge" style="display: none;">
               <div class="file-badge-left">
-                <div class="file-badge-icon">📄</div>
+                <div style="font-size: 22px;">📄</div>
                 <div>
                   <div class="file-badge-title" id="fileNameLabel">file.xlsx</div>
                   <div class="file-badge-meta" id="fileMetaLabel">0 rows detected</div>
@@ -668,13 +913,13 @@
           </div>
         </div>
 
-        <!-- Shift Parameters Card -->
+        <!-- Shift & Break Timings Card -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">⚙️ 2. Shift & Break Timings</div>
+            <div class="card-title">⚙️ 3. Shift & Break Configuration</div>
           </div>
           <div class="card-body">
-            <!-- Target Date -->
+            <!-- Work Date -->
             <div class="form-group">
               <label for="targetDate">Work Date <span class="label-hint">(Target date for timestamps)</span></label>
               <input type="date" id="targetDate">
@@ -697,11 +942,11 @@
               <div class="break-card-title">🍽️ Primary Break (Lunch) — Zero Timestamps Allowed</div>
               <div class="form-row">
                 <div>
-                  <label for="lunchStart">Break Start</label>
+                  <label for="lunchStart">Lunch Start</label>
                   <input type="time" id="lunchStart" value="13:00">
                 </div>
                 <div>
-                  <label for="lunchEnd">Break End</label>
+                  <label for="lunchEnd">Lunch End</label>
                   <input type="time" id="lunchEnd" value="14:00">
                 </div>
               </div>
@@ -709,11 +954,11 @@
 
             <!-- Secondary Break (Tea / Snack) -->
             <div class="break-card" style="background: #fdf4ff; border-color: #f0abfc;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div class="break-card-title" style="color: #86198f; margin-bottom: 0;">☕ Evening / Tea Break (Optional)</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div class="break-card-title" style="color: #86198f; margin-bottom: 0;">☕ Evening / Tea Break (Did you take it?)</div>
                 <label class="checkbox-group" style="margin-top: 0;">
                   <input type="checkbox" id="break2Enabled">
-                  <span style="font-size: 0.75rem;">Enable</span>
+                  <span style="font-size: 0.75rem; font-weight: 700;">Yes, Taken</span>
                 </label>
               </div>
               <div class="form-row" id="break2Inputs" style="opacity: 0.5; pointer-events: none;">
@@ -728,7 +973,7 @@
               </div>
             </div>
 
-            <!-- Advanced Column & Mode -->
+            <!-- Column & Mode -->
             <div class="form-row form-group">
               <div>
                 <label for="timestampColSelect">Timestamp Column</label>
@@ -737,52 +982,54 @@
                 </select>
               </div>
               <div>
-                <label for="pacingMode">Distribution Pacing</label>
+                <label for="pacingMode">Pacing Mode</label>
                 <select id="pacingMode">
                   <option value="natural">Realistic Human Pace (Natural Variance)</option>
-                  <option value="uniform">Strict Equal Intervals</option>
+                  <option value="uniform">Strict Equal Spacing</option>
                 </select>
               </div>
             </div>
 
-            <!-- Start / End Buffers -->
-            <div class="form-row form-group">
-              <div>
-                <label for="startBuffer">Morning Start Buffer <span class="label-hint">(mins after shift start)</span></label>
-                <input type="number" id="startBuffer" value="8" min="0" max="60">
-              </div>
-              <div>
-                <label for="endBuffer">Evening Pack-up Buffer <span class="label-hint">(mins before shift end)</span></label>
-                <input type="number" id="endBuffer" value="8" min="0" max="60">
-              </div>
-            </div>
-
-            <!-- Light Blue Theme Option (User Rule) -->
-            <div class="theme-card">
-              <div class="theme-card-title">🎨 Light Blue Theme Formatting</div>
-              <label class="checkbox-group">
+            <!-- Light Blue Theme (Custom Rule) -->
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 12px; margin-bottom: 16px;">
+              <label class="checkbox-group" style="margin-top: 0;">
                 <input type="checkbox" id="applyTheme" checked>
-                <span>Apply Light Blue Theme (Dark Blue #1155CC header, alternate #E8F0FE rows & borders)</span>
+                <span>Apply Light Blue Theme (Dark Blue #1155CC header, alternate #E8F0FE rows)</span>
               </label>
             </div>
 
-            <!-- Action Buttons -->
+            <!-- Action Buttons for User -->
             <div class="btn-group">
               <button class="btn btn-secondary" id="btnPreview" disabled>
-                <span>🔍 Preview</span>
+                <span>🔍 Preview (Max 50)</span>
               </button>
-              <button class="btn btn-primary" id="btnDivide" disabled>
-                <span id="btnDivideSpinner" class="spinner" style="display: none;"></span>
-                <span id="btnDivideText">⚡ Divide & Download Excel</span>
+              <button class="btn btn-primary" id="btnSubmitApproval" disabled>
+                <span id="btnSubmitSpinner" class="spinner" style="display: none;"></span>
+                <span id="btnSubmitText">📩 Request Admin Approval</span>
               </button>
+            </div>
+
+            <!-- Live Approval Status Card -->
+            <div id="approvalCard" class="approval-card">
+              <div class="approval-header">
+                <span style="font-weight: 700; font-size: 0.85rem;" id="approvalReqId">#REQ-</span>
+                <span class="status-badge badge-pending" id="approvalStatusBadge">PENDING APPROVAL</span>
+              </div>
+              <p style="font-size: 0.8rem; margin: 6px 0;" id="approvalMsg">
+                Your request has been submitted to Admin. Download is locked until approved.
+              </p>
+              <div id="approvedDownloadContainer" style="display: none; margin-top: 12px;">
+                <button class="btn btn-success" id="btnDownloadApproved">
+                  <span>📥 Download Approved Excel File</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Right Column: Visual Timeline, Stats & Preview -->
+      <!-- Right Column: Visual Timeline, Stats & Strict Preview -->
       <section>
-        <!-- Stats Dashboard -->
         <div class="card">
           <div class="card-header">
             <div class="card-title">📊 Shift & Workload Summary</div>
@@ -794,11 +1041,11 @@
                 <div class="stat-value" id="statTotalRows">0</div>
               </div>
               <div class="stat-box">
-                <div class="stat-label">Shift Duration</div>
+                <div class="stat-label">Gross Shift</div>
                 <div class="stat-value" id="statShiftHours">9.0h</div>
               </div>
               <div class="stat-box">
-                <div class="stat-label">Break Duration</div>
+                <div class="stat-label">Total Break</div>
                 <div class="stat-value" id="statBreakHours">1.0h</div>
               </div>
               <div class="stat-box">
@@ -814,9 +1061,9 @@
                 <span id="timelinePace">Average: ~0 mins/log</span>
               </div>
               <div class="timeline-track" id="timelineTrack">
-                <div class="timeline-seg-work" id="tSeg1" style="width: 38%;"></div>
-                <div class="timeline-seg-break" id="tSegBreak1" style="width: 12%;">LUNCH</div>
-                <div class="timeline-seg-work" id="tSeg2" style="width: 50%;"></div>
+                <div class="timeline-seg-work" style="width: 38%;"></div>
+                <div class="timeline-seg-break" style="width: 12%;">LUNCH</div>
+                <div class="timeline-seg-work" style="width: 50%;"></div>
               </div>
               <div class="timeline-ticks">
                 <span id="tickStart">09:30</span>
@@ -828,11 +1075,13 @@
           </div>
         </div>
 
-        <!-- Preview Table Card -->
+        <!-- Strict Preview Table Card (Max 50 Rows) -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">👁️ Timestamp Comparison Preview</div>
-            <span style="font-size: 0.75rem; color: var(--gray-500);">Showing up to first 50 rows</span>
+            <div class="card-title">👁️ Timestamp Preview</div>
+            <span style="font-size: 0.725rem; color: #b45309; font-weight: 600; background: #fef3c7; padding: 2px 8px; border-radius: 4px;">
+              Strictly limited to 50 rows
+            </span>
           </div>
           <div class="card-body" style="padding: 0;">
             <div class="table-container">
@@ -847,7 +1096,7 @@
                 <tbody id="previewTableBody">
                   <tr>
                     <td colspan="3" style="text-align: center; color: var(--gray-400); padding: 36px;">
-                      Upload an Excel file and click <strong>Preview</strong> to inspect timestamps.
+                      Upload an Excel file to preview divided timestamps.
                     </td>
                   </tr>
                 </tbody>
@@ -859,14 +1108,104 @@
     </div>
   </main>
 
+  <!-- ===================================================================== -->
+  <!-- ADMIN DASHBOARD MODAL                                                 -->
+  <!-- ===================================================================== -->
+  <div class="modal-overlay" id="adminModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>🛡️ Admin Command Center — Approvals & Verification</h2>
+        <button class="btn-close-modal" id="btnCloseAdminModal">&times;</button>
+      </div>
+      <div class="modal-body" id="adminModalBody">
+        <!-- Login Form (if not authenticated) -->
+        <div class="login-box" id="adminLoginBox">
+          <div style="font-size: 38px; margin-bottom: 8px;">🔐</div>
+          <h3>Admin Login</h3>
+          <p>Sign in to review intern submissions and validate break times.</p>
+          <form id="adminLoginForm">
+            <div class="form-group" style="text-align: left;">
+              <label for="adminUsername">Admin Username</label>
+              <input type="text" id="adminUsername" value="admin" required>
+            </div>
+            <div class="form-group" style="text-align: left;">
+              <label for="adminPassword">Admin Password</label>
+              <input type="password" id="adminPassword" value="admin" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
+              <span>Login to Dashboard</span>
+            </button>
+            <p style="font-size: 0.72rem; color: var(--gray-400); margin-top: 12px; margin-bottom: 0;">
+              Default: <strong>admin</strong> / <strong>admin</strong>
+            </p>
+          </form>
+        </div>
+
+        <!-- Admin Table & Controls (if authenticated) -->
+        <div id="adminDashboardView" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div class="admin-stats">
+              <div class="admin-stat-pill" style="border-color: #fde68a; background: #fffbeb;">
+                <span>🟡 Pending:</span> <strong id="adminCountPending">0</strong>
+              </div>
+              <div class="admin-stat-pill" style="border-color: #bbf7d0; background: #f0fdf4;">
+                <span>🟢 Approved:</span> <strong id="adminCountApproved">0</strong>
+              </div>
+              <div class="admin-stat-pill" style="border-color: #fecaca; background: #fef2f2;">
+                <span>🔴 Rejected:</span> <strong id="adminCountRejected">0</strong>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnRefreshAdmin">
+                🔄 Refresh
+              </button>
+              <button class="btn btn-danger" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnAdminLogout">
+                Logout
+              </button>
+            </div>
+          </div>
+
+          <div style="max-height: 480px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 8px;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Request ID & Date</th>
+                  <th>Requester Name</th>
+                  <th>File & Rows</th>
+                  <th>Shift Hours</th>
+                  <th>Lunch Break</th>
+                  <th>Evening Break</th>
+                  <th>Net Work</th>
+                  <th>Status</th>
+                  <th style="text-align: center;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminTableBody">
+                <tr>
+                  <td colspan="9" style="text-align: center; color: var(--gray-400); padding: 30px;">
+                    Loading approval requests...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast">Message</div>
 
   <script>
     // State
     let currentFile = null;
     let fileMetadata = null;
+    let currentRequestId = null;
+    let statusPollInterval = null;
+    let adminToken = localStorage.getItem('divider_admin_token') || null;
 
-    // DOM Elements
+    // Elements
+    const userNameInput = document.getElementById('userNameInput');
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('fileInput');
     const fileInfoBox = document.getElementById('fileInfoBox');
@@ -885,55 +1224,58 @@
     const break2EndInput = document.getElementById('break2End');
     const timestampColSelect = document.getElementById('timestampColSelect');
     const pacingMode = document.getElementById('pacingMode');
-    const startBufferInput = document.getElementById('startBuffer');
-    const endBufferInput = document.getElementById('endBuffer');
     const applyThemeInput = document.getElementById('applyTheme');
 
     const btnPreview = document.getElementById('btnPreview');
-    const btnDivide = document.getElementById('btnDivide');
-    const btnDivideSpinner = document.getElementById('btnDivideSpinner');
-    const btnDivideText = document.getElementById('btnDivideText');
+    const btnSubmitApproval = document.getElementById('btnSubmitApproval');
+    const btnSubmitSpinner = document.getElementById('btnSubmitSpinner');
+    const btnSubmitText = document.getElementById('btnSubmitText');
+
+    const approvalCard = document.getElementById('approvalCard');
+    const approvalReqId = document.getElementById('approvalReqId');
+    const approvalStatusBadge = document.getElementById('approvalStatusBadge');
+    const approvalMsg = document.getElementById('approvalMsg');
+    const approvedDownloadContainer = document.getElementById('approvedDownloadContainer');
+    const btnDownloadApproved = document.getElementById('btnDownloadApproved');
 
     const statTotalRows = document.getElementById('statTotalRows');
     const statShiftHours = document.getElementById('statShiftHours');
     const statBreakHours = document.getElementById('statBreakHours');
     const statWorkHours = document.getElementById('statWorkHours');
     const timelinePace = document.getElementById('timelinePace');
-
-    const tickStart = document.getElementById('tickStart');
-    const tickLunchStart = document.getElementById('tickLunchStart');
-    const tickLunchEnd = document.getElementById('tickLunchEnd');
-    const tickEnd = document.getElementById('tickEnd');
     const timelineTrack = document.getElementById('timelineTrack');
-
     const previewTableBody = document.getElementById('previewTableBody');
     const toast = document.getElementById('toast');
 
-    // Default date to today
+    // Admin Modal Elements
+    const adminModal = document.getElementById('adminModal');
+    const btnOpenAdminModal = document.getElementById('btnOpenAdminModal');
+    const btnCloseAdminModal = document.getElementById('btnCloseAdminModal');
+    const adminLoginBox = document.getElementById('adminLoginBox');
+    const adminLoginForm = document.getElementById('adminLoginForm');
+    const adminUsername = document.getElementById('adminUsername');
+    const adminPassword = document.getElementById('adminPassword');
+    const adminDashboardView = document.getElementById('adminDashboardView');
+    const adminCountPending = document.getElementById('adminCountPending');
+    const adminCountApproved = document.getElementById('adminCountApproved');
+    const adminCountRejected = document.getElementById('adminCountRejected');
+    const adminTableBody = document.getElementById('adminTableBody');
+    const btnRefreshAdmin = document.getElementById('btnRefreshAdmin');
+    const btnAdminLogout = document.getElementById('btnAdminLogout');
+
+    // Default target date
     targetDateInput.value = new Date().toISOString().split('T')[0];
 
-    // Drag and drop handlers
-    dropzone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropzone.classList.add('dragover');
-    });
-
-    dropzone.addEventListener('dragleave', () => {
-      dropzone.classList.remove('dragover');
-    });
-
+    // Drag and Drop
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
     dropzone.addEventListener('drop', (e) => {
       e.preventDefault();
       dropzone.classList.remove('dragover');
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        handleFileSelect(e.dataTransfer.files[0]);
-      }
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) handleFileSelect(e.dataTransfer.files[0]);
     });
-
     fileInput.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files.length > 0) {
-        handleFileSelect(e.target.files[0]);
-      }
+      if (e.target.files && e.target.files.length > 0) handleFileSelect(e.target.files[0]);
     });
 
     btnRemoveFile.addEventListener('click', () => {
@@ -943,14 +1285,9 @@
       fileInfoBox.style.display = 'none';
       dropzone.style.display = 'block';
       btnPreview.disabled = true;
-      btnDivide.disabled = true;
+      btnSubmitApproval.disabled = true;
       statTotalRows.innerText = '0';
-      previewTableBody.innerHTML = `
-        <tr>
-          <td colspan="3" style="text-align: center; color: var(--gray-400); padding: 36px;">
-            Upload an Excel file and click <strong>Preview</strong> to inspect timestamps.
-          </td>
-        </tr>`;
+      previewTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--gray-400); padding: 36px;">Upload an Excel file to preview divided timestamps.</td></tr>`;
       updateTimelineVisuals();
     });
 
@@ -966,7 +1303,6 @@
       updateTimelineVisuals();
     });
 
-    // Inputs change triggers timeline calculation
     [shiftStartInput, shiftEndInput, lunchStartInput, lunchEndInput, break2StartInput, break2EndInput].forEach(inp => {
       inp.addEventListener('change', updateTimelineVisuals);
     });
@@ -974,9 +1310,7 @@
     function showToast(msg, isError = false) {
       toast.innerText = msg;
       toast.className = 'toast show ' + (isError ? 'toast-error' : 'toast-success');
-      setTimeout(() => {
-        toast.className = 'toast';
-      }, 3500);
+      setTimeout(() => { toast.className = 'toast'; }, 3500);
     }
 
     async function handleFileSelect(file) {
@@ -990,29 +1324,20 @@
       fileInfoBox.style.display = 'flex';
       dropzone.style.display = 'none';
 
-      // Send inspection request
       const formData = new FormData();
       formData.append('file', file);
 
       try {
-        const resp = await fetch('/api/inspect', {
-          method: 'POST',
-          body: formData
-        });
+        const resp = await fetch('/api/inspect', { method: 'POST', body: formData });
         const res = await resp.json();
-        if (!res.success) {
-          throw new Error(res.error || 'Failed to inspect file');
-        }
+        if (!res.success) throw new Error(res.error || 'Inspection failed');
 
         fileMetadata = res.data;
         fileMetaLabel.innerText = `${fileMetadata.total_rows} data rows • Sheet: ${fileMetadata.active_sheet}`;
         statTotalRows.innerText = fileMetadata.total_rows;
 
-        if (fileMetadata.detected_date) {
-          targetDateInput.value = fileMetadata.detected_date;
-        }
+        if (fileMetadata.detected_date) targetDateInput.value = fileMetadata.detected_date;
 
-        // Populate column select
         timestampColSelect.innerHTML = '';
         fileMetadata.headers.forEach((h, idx) => {
           const opt = document.createElement('option');
@@ -1025,12 +1350,8 @@
         });
 
         btnPreview.disabled = false;
-        btnDivide.disabled = false;
-
+        btnSubmitApproval.disabled = false;
         updateTimelineVisuals();
-        showToast(`Loaded ${fileMetadata.total_rows} rows from ${file.name}`);
-
-        // Trigger automatic preview
         triggerPreview();
       } catch (err) {
         showToast('Error inspecting file: ' + err.message, true);
@@ -1049,11 +1370,6 @@
       const lStart = timeToMinutes(lunchStartInput.value || '13:00');
       const lEnd = timeToMinutes(lunchEndInput.value || '14:00');
 
-      tickStart.innerText = shiftStartInput.value;
-      tickLunchStart.innerText = lunchStartInput.value;
-      tickLunchEnd.innerText = lunchEndInput.value;
-      tickEnd.innerText = shiftEndInput.value;
-
       const totalShiftMin = Math.max(1, sEnd - sStart);
       let totalBreakMin = Math.max(0, lEnd - lStart);
 
@@ -1064,45 +1380,30 @@
       }
 
       const netWorkMin = Math.max(0, totalShiftMin - totalBreakMin);
-
       statShiftHours.innerText = (totalShiftMin / 60).toFixed(1) + 'h';
       statBreakHours.innerText = (totalBreakMin / 60).toFixed(1) + 'h';
       statWorkHours.innerText = (netWorkMin / 60).toFixed(1) + 'h';
 
       const rows = fileMetadata ? fileMetadata.total_rows : 0;
       if (rows > 0 && netWorkMin > 0) {
-        const avgMin = (netWorkMin / rows).toFixed(1);
-        timelinePace.innerText = `Average: ~${avgMin} mins/log`;
-      } else {
-        timelinePace.innerText = 'Average: ~0 mins/log';
+        timelinePace.innerText = `Average: ~${(netWorkMin / rows).toFixed(1)} mins/log`;
       }
 
-      // Rebuild timeline track segments
       const seg1_min = Math.max(0, lStart - sStart);
       const lunch_min = Math.max(0, lEnd - lStart);
       const seg2_min = Math.max(0, sEnd - lEnd);
 
-      const p1 = ((seg1_min / totalShiftMin) * 100).toFixed(1);
-      const pLunch = ((lunch_min / totalShiftMin) * 100).toFixed(1);
-      const p2 = ((seg2_min / totalShiftMin) * 100).toFixed(1);
-
       timelineTrack.innerHTML = `
-        <div class="timeline-seg-work" style="width: ${p1}%;"></div>
-        <div class="timeline-seg-break" style="width: ${pLunch}%;">LUNCH</div>
-        <div class="timeline-seg-work" style="width: ${p2}%;"></div>
+        <div class="timeline-seg-work" style="width: ${((seg1_min / totalShiftMin) * 100).toFixed(1)}%;"></div>
+        <div class="timeline-seg-break" style="width: ${((lunch_min / totalShiftMin) * 100).toFixed(1)}%;">LUNCH</div>
+        <div class="timeline-seg-work" style="width: ${((seg2_min / totalShiftMin) * 100).toFixed(1)}%;"></div>
       `;
     }
 
     async function triggerPreview() {
       if (!currentFile) return;
-
       btnPreview.disabled = true;
-      previewTableBody.innerHTML = `
-        <tr>
-          <td colspan="3" style="text-align: center; color: var(--gray-500); padding: 24px;">
-            Calculating time distributions...
-          </td>
-        </tr>`;
+      previewTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--gray-500); padding: 24px;">Calculating preview (max 50 rows)...</td></tr>`;
 
       const formData = new FormData();
       formData.append('file', currentFile);
@@ -1116,23 +1417,17 @@
       formData.append('break2_end', break2EndInput.value);
       formData.append('timestamp_col', timestampColSelect.value || '');
       formData.append('mode', pacingMode.value);
-      formData.append('start_buffer', startBufferInput.value);
-      formData.append('end_buffer', endBufferInput.value);
       formData.append('apply_theme', applyThemeInput.checked ? 'true' : 'false');
 
       try {
-        const resp = await fetch('/api/preview', {
-          method: 'POST',
-          body: formData
-        });
+        const resp = await fetch('/api/preview', { method: 'POST', body: formData });
         const res = await resp.json();
-        if (!res.success) throw new Error(res.error || 'Preview calculation failed');
+        if (!res.success) throw new Error(res.error || 'Preview failed');
 
         const stats = res.stats;
         statWorkHours.innerText = stats.working_hours + 'h';
         timelinePace.innerText = `Average: ~${stats.avg_minutes_per_log} mins/log`;
 
-        // Render rows
         let rowsHtml = '';
         stats.preview_comparisons.forEach(item => {
           rowsHtml += `
@@ -1144,15 +1439,8 @@
           `;
         });
         previewTableBody.innerHTML = rowsHtml;
-        showToast('Preview updated successfully!');
       } catch (err) {
         showToast('Preview error: ' + err.message, true);
-        previewTableBody.innerHTML = `
-          <tr>
-            <td colspan="3" style="text-align: center; color: var(--danger); padding: 24px;">
-              ${err.message}
-            </td>
-          </tr>`;
       } finally {
         btnPreview.disabled = false;
       }
@@ -1160,16 +1448,28 @@
 
     btnPreview.addEventListener('click', triggerPreview);
 
-    // Process & Download
-    btnDivide.addEventListener('click', async () => {
-      if (!currentFile) return;
+    // =========================================================================
+    // SUBMIT REQUEST FOR ADMIN APPROVAL
+    // =========================================================================
+    btnSubmitApproval.addEventListener('click', async () => {
+      const uName = userNameInput.value.trim();
+      if (!uName) {
+        showToast('Please enter your Name / Intern Name first!', true);
+        userNameInput.focus();
+        return;
+      }
+      if (!currentFile) {
+        showToast('Please upload an Excel log file!', true);
+        return;
+      }
 
-      btnDivide.disabled = true;
-      btnDivideSpinner.style.display = 'inline-block';
-      btnDivideText.innerText = 'Processing Excel...';
+      btnSubmitApproval.disabled = true;
+      btnSubmitSpinner.style.display = 'inline-block';
+      btnSubmitText.innerText = 'Submitting Request...';
 
       const formData = new FormData();
       formData.append('file', currentFile);
+      formData.append('user_name', uName);
       formData.append('target_date', targetDateInput.value);
       formData.append('shift_start', shiftStartInput.value);
       formData.append('shift_end', shiftEndInput.value);
@@ -1180,51 +1480,246 @@
       formData.append('break2_end', break2EndInput.value);
       formData.append('timestamp_col', timestampColSelect.value || '');
       formData.append('mode', pacingMode.value);
-      formData.append('start_buffer', startBufferInput.value);
-      formData.append('end_buffer', endBufferInput.value);
       formData.append('apply_theme', applyThemeInput.checked ? 'true' : 'false');
 
       try {
-        const resp = await fetch('/api/divide', {
-          method: 'POST',
-          body: formData
-        });
+        const resp = await fetch('/api/request-approval', { method: 'POST', body: formData });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error || 'Failed to submit approval request');
 
-        if (!resp.ok) {
-          const errData = await resp.json();
-          throw new Error(errData.error || 'Failed to process file');
-        }
-
-        // Extract filename from header
-        let filename = 'log_divided.xlsx';
-        const disposition = resp.headers.get('Content-Disposition');
-        if (disposition && disposition.indexOf('filename=') !== -1) {
-          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
-          if (matches != null && matches[1]) {
-            filename = matches[1].replace(/['"]/g, '');
-          }
-        }
-
-        const blob = await resp.blob();
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = downloadUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(downloadUrl);
-        a.remove();
-
-        showToast(`Downloaded: ${filename}`);
+        const req = res.request;
+        currentRequestId = req.id;
+        showApprovalStatus(req);
+        startStatusPolling(req.id);
+        showToast(`Request submitted successfully! ID: #${req.id}`);
       } catch (err) {
-        showToast('Error processing file: ' + err.message, true);
+        showToast('Error: ' + err.message, true);
       } finally {
-        btnDivide.disabled = false;
-        btnDivideSpinner.style.display = 'none';
-        btnDivideText.innerText = '⚡ Divide & Download Excel';
+        btnSubmitApproval.disabled = false;
+        btnSubmitSpinner.style.display = 'none';
+        btnSubmitText.innerText = '📩 Request Admin Approval';
       }
     });
+
+    function showApprovalStatus(req) {
+      approvalCard.style.display = 'block';
+      approvalReqId.innerText = `#${req.id} • ${req.user_name}`;
+
+      if (req.status === 'PENDING') {
+        approvalCard.className = 'approval-card approval-pending';
+        approvalStatusBadge.className = 'status-badge badge-pending';
+        approvalStatusBadge.innerText = '⏳ PENDING APPROVAL';
+        approvalMsg.innerText = 'Awaiting Admin Approval. Admin will validate your shift timings and break windows before unlocking the download.';
+        approvedDownloadContainer.style.display = 'none';
+      } else if (req.status === 'APPROVED') {
+        approvalCard.className = 'approval-card approval-approved';
+        approvalStatusBadge.className = 'status-badge badge-approved';
+        approvalStatusBadge.innerText = '✅ APPROVED BY ADMIN';
+        approvalMsg.innerText = `Approved on ${req.approved_at || 'today'}! Your Excel file is ready to download.`;
+        approvedDownloadContainer.style.display = 'block';
+      } else if (req.status === 'REJECTED') {
+        approvalCard.className = 'approval-card approval-rejected';
+        approvalStatusBadge.className = 'status-badge badge-rejected';
+        approvalStatusBadge.innerText = '❌ REJECTED';
+        approvalMsg.innerText = `Rejected by Admin. Reason: ${req.rejection_reason || 'Timing mismatch'}. Please correct your inputs and resubmit.`;
+        approvedDownloadContainer.style.display = 'none';
+      }
+    }
+
+    function startStatusPolling(reqId) {
+      if (statusPollInterval) clearInterval(statusPollInterval);
+      statusPollInterval = setInterval(async () => {
+        try {
+          const resp = await fetch(`/api/request-status/${reqId}`);
+          const res = await resp.json();
+          if (res.success) {
+            showApprovalStatus(res);
+            if (res.status === 'APPROVED' || res.status === 'REJECTED') {
+              clearInterval(statusPollInterval);
+            }
+          }
+        } catch (e) {}
+      }, 3500);
+    }
+
+    btnDownloadApproved.addEventListener('click', () => {
+      if (!currentRequestId) return;
+      window.location.href = `/api/download-approved/${currentRequestId}`;
+    });
+
+    // =========================================================================
+    // ADMIN DASHBOARD & LOGIN
+    // =========================================================================
+    btnOpenAdminModal.addEventListener('click', () => {
+      adminModal.classList.add('active');
+      if (adminToken) {
+        showAdminDashboard();
+      } else {
+        adminLoginBox.style.display = 'block';
+        adminDashboardView.style.display = 'none';
+      }
+    });
+
+    btnCloseAdminModal.addEventListener('click', () => {
+      adminModal.classList.remove('active');
+    });
+
+    adminLoginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const u = adminUsername.value.trim();
+      const p = adminPassword.value.trim();
+
+      const formData = new FormData();
+      formData.append('username', u);
+      formData.append('password', p);
+
+      try {
+        const resp = await fetch('/api/admin/login', { method: 'POST', body: formData });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error || 'Login failed');
+
+        adminToken = res.token;
+        localStorage.setItem('divider_admin_token', adminToken);
+        showToast('Admin logged in successfully!');
+        showAdminDashboard();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    });
+
+    btnAdminLogout.addEventListener('click', () => {
+      adminToken = null;
+      localStorage.removeItem('divider_admin_token');
+      adminLoginBox.style.display = 'block';
+      adminDashboardView.style.display = 'none';
+      showToast('Logged out of Admin');
+    });
+
+    btnRefreshAdmin.addEventListener('click', loadAdminRequests);
+
+    function showAdminDashboard() {
+      adminLoginBox.style.display = 'none';
+      adminDashboardView.style.display = 'block';
+      loadAdminRequests();
+    }
+
+    async function loadAdminRequests() {
+      if (!adminToken) return;
+      adminTableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--gray-500); padding: 24px;">Loading requests...</td></tr>`;
+
+      try {
+        const resp = await fetch('/api/admin/requests', {
+          headers: { 'X-Admin-Token': adminToken }
+        });
+        if (resp.status === 401) {
+          adminToken = null;
+          localStorage.removeItem('divider_admin_token');
+          adminLoginBox.style.display = 'block';
+          adminDashboardView.style.display = 'none';
+          return;
+        }
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error);
+
+        renderAdminTable(res.requests);
+      } catch (err) {
+        showToast('Failed to load admin requests: ' + err.message, true);
+      }
+    }
+
+    function renderAdminTable(reqs) {
+      let pending = 0, approved = 0, rejected = 0;
+      reqs.forEach(r => {
+        if (r.status === 'PENDING') pending++;
+        else if (r.status === 'APPROVED') approved++;
+        else if (r.status === 'REJECTED') rejected++;
+      });
+
+      adminCountPending.innerText = pending;
+      adminCountApproved.innerText = approved;
+      adminCountRejected.innerText = rejected;
+
+      if (!reqs || reqs.length === 0) {
+        adminTableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--gray-400); padding: 30px;">No requests found yet.</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      reqs.forEach(r => {
+        const evBreak = r.break2_enabled ? `<span style="color: #86198f; font-weight: 600;">Yes (${r.break2_start}-${r.break2_end})</span>` : `<span style="color: var(--gray-400);">No</span>`;
+        let statusBadge = '';
+        if (r.status === 'PENDING') statusBadge = `<span class="status-badge badge-pending">PENDING</span>`;
+        else if (r.status === 'APPROVED') statusBadge = `<span class="status-badge badge-approved">APPROVED</span>`;
+        else if (r.status === 'REJECTED') statusBadge = `<span class="status-badge badge-rejected">REJECTED</span>`;
+
+        html += `
+          <tr>
+            <td>
+              <strong style="color: #2563eb;">#${r.id}</strong><br>
+              <span style="color: var(--gray-400); font-size: 0.7rem;">${r.created_at}</span>
+            </td>
+            <td><strong>${r.user_name}</strong></td>
+            <td>
+              <span title="${r.filename}">${r.filename.length > 18 ? r.filename.substring(0,18)+'...' : r.filename}</span><br>
+              <span style="color: var(--gray-500); font-size: 0.72rem;">${r.num_rows} logs</span>
+            </td>
+            <td>${r.shift_start} - ${r.shift_end}</td>
+            <td>${r.lunch_start} - ${r.lunch_end}</td>
+            <td>${evBreak}</td>
+            <td><strong style="color: #15803d;">${r.working_hours}h</strong></td>
+            <td>${statusBadge}</td>
+            <td style="text-align: center; white-space: nowrap;">
+              ${r.status === 'PENDING' ? `
+                <button class="action-btn-sm action-btn-approve" onclick="handleAdminApprove('${r.id}')">✓ Approve</button>
+                <button class="action-btn-sm action-btn-reject" onclick="handleAdminReject('${r.id}')">✗ Reject</button>
+              ` : ''}
+              <button class="action-btn-sm action-btn-dl" onclick="handleAdminDownload('${r.id}')">📥 Excel</button>
+            </td>
+          </tr>
+        `;
+      });
+      adminTableBody.innerHTML = html;
+    }
+
+    window.handleAdminApprove = async function(reqId) {
+      if (!confirm(`Are you sure you want to APPROVE request #${reqId}?`)) return;
+      try {
+        const resp = await fetch(`/api/admin/approve/${reqId}`, {
+          method: 'POST',
+          headers: { 'X-Admin-Token': adminToken }
+        });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error);
+        showToast(`Request #${reqId} Approved!`);
+        loadAdminRequests();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    };
+
+    window.handleAdminReject = async function(reqId) {
+      const reason = prompt(`Enter rejection reason for #${reqId}:`, "Excessive break timing or invalid shift hours");
+      if (reason === null) return;
+      try {
+        const formData = new FormData();
+        formData.append('reason', reason);
+        const resp = await fetch(`/api/admin/reject/${reqId}`, {
+          method: 'POST',
+          headers: { 'X-Admin-Token': adminToken },
+          body: formData
+        });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error);
+        showToast(`Request #${reqId} Rejected!`);
+        loadAdminRequests();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    };
+
+    window.handleAdminDownload = function(reqId) {
+      window.location.href = `/api/admin/download/${reqId}?token=${adminToken}`;
+    };
 
     // Initial timeline
     updateTimelineVisuals();
