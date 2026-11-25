@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log Timestamp Divider - Shift Work Time Distributor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --gray-50: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --gray-400: #94a3b8;
+      --gray-500: #64748b;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --gray-800: #1e293b;
+      --gray-900: #0f172a;
+      --border-radius: 12px;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f8fafc;
+      color: var(--gray-800);
+      line-height: 1.5;
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+
+    /* Navbar / Header */
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #1155cc 0%, #2563eb 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 22px;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+    }
+
+    .brand-text h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      letter-spacing: -0.02em;
+    }
+
+    .brand-text p {
+      font-size: 0.8rem;
+      color: var(--gray-500);
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: #dcfce7;
+      color: #15803d;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 9999px;
+      border: 1px solid #bbf7d0;
+    }
+
+    .badge-status::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: #16a34a;
+      border-radius: 50%;
+    }
+
+    /* Main Container */
+    main {
+      max-width: 1200px;
+      margin: 28px auto 0 auto;
+      padding: 0 24px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Card styling */
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      margin-bottom: 24px;
+      transition: box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--gray-200);
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    /* Dropzone */
+    .dropzone {
+      border: 2px dashed var(--gray-300);
+      background: var(--gray-50);
+      border-radius: 12px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .dropzone-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      color: var(--primary);
+    }
+
+    .dropzone h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gray-800);
+      margin-bottom: 4px;
+    }
+
+    .dropzone p {
+      font-size: 0.825rem;
+      color: var(--gray-500);
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* File Info Box */
+    .file-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 14px;
+    }
+
+    .file-badge-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .file-badge-icon {
+      font-size: 24px;
+    }
+
+    .file-badge-title {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #1e3a8a;
+    }
+
+    .file-badge-meta {
+      font-size: 0.75rem;
+      color: #3b82f6;
+    }
+
+    .btn-remove-file {
+      background: none;
+      border: none;
+      color: var(--gray-400);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .btn-remove-file:hover {
+      color: var(--danger);
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 6px;
+    }
+
+    .label-hint {
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--gray-500);
+      margin-left: 4px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--gray-800);
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      font-family: inherit;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .checkbox-group span {
+      font-size: 0.825rem;
+      color: var(--gray-700);
+      font-weight: 500;
+    }
+
+    /* Break box highlight */
+    .break-card {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    .break-card-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Stats Grid */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 650px) {
+      .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .stat-box {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.725rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-top: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Timeline Bar */
+    .timeline-container {
+      margin-bottom: 24px;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .timeline-track {
+      position: relative;
+      height: 26px;
+      background: #e2e8f0;
+      border-radius: 13px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .timeline-seg-work {
+      background: linear-gradient(90deg, #3b82f6, #2563eb);
+      height: 100%;
+      position: relative;
+      transition: width 0.3s ease;
+    }
+
+    .timeline-seg-break {
+      background: repeating-linear-gradient(
+        45deg,
+        #f59e0b,
+        #f59e0b 8px,
+        #d97706 8px,
+        #d97706 16px
+      );
+      height: 100%;
+      position: relative;
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    .timeline-ticks {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--gray-600);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Preview Table */
+    .table-container {
+      max-height: 380px;
+      overflow-y: auto;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      text-align: left;
+    }
+
+    thead th {
+      background: #f8fafc;
+      color: var(--gray-700);
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--gray-200);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    tbody td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--gray-100);
+      color: var(--gray-800);
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    tbody tr:hover {
+      background: #f1f5f9;
+    }
+
+    .mono-cell {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+    }
+
+    .new-ts-cell {
+      color: #1d4ed8;
+      font-weight: 600;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: var(--gray-700);
+      border: 1px solid var(--gray-300);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--gray-50);
+      border-color: var(--gray-400);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    /* Theme Option Callout */
+    .theme-card {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-top: 14px;
+    }
+
+    .theme-card-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #166534;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Notification Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      background: var(--gray-900);
+      color: #ffffff;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.toast-success {
+      background: #166534;
+      border: 1px solid #22c55e;
+    }
+
+    .toast.toast-error {
+      background: #991b1b;
+      border: 1px solid #ef4444;
+    }
+
+    .spinner {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid #ffffff;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">⏱️</div>
+      <div class="brand-text">
+        <h1>Log Timestamp Divider</h1>
+        <p>Distribute daily log timestamps across your complete shift with break exclusions</p>
+      </div>
+    </div>
+    <div>
+      <span class="badge-status">Offline Active</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid-2">
+      <!-- Left Column: Inputs & Configuration -->
+      <section>
+        <!-- File Upload Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📁 1. Upload Log Excel File</div>
+          </div>
+          <div class="card-body">
+            <div class="dropzone" id="dropzone">
+              <input type="file" id="fileInput" accept=".xlsx, .xls">
+              <div class="dropzone-icon">📊</div>
+              <h3>Drag & drop your Excel log here</h3>
+              <p>or click to browse from computer (.xlsx, .xls)</p>
+            </div>
+
+            <div id="fileInfoBox" class="file-badge" style="display: none;">
+              <div class="file-badge-left">
+                <div class="file-badge-icon">📄</div>
+                <div>
+                  <div class="file-badge-title" id="fileNameLabel">file.xlsx</div>
+                  <div class="file-badge-meta" id="fileMetaLabel">0 rows detected</div>
+                </div>
+              </div>
+              <button class="btn-remove-file" id="btnRemoveFile" title="Remove file">&times;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shift Parameters Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚙️ 2. Shift & Break Timings</div>
+          </div>
+          <div class="card-body">
+            <!-- Target Date -->
+            <div class="form-group">
+              <label for="targetDate">Work Date <span class="label-hint">(Target date for timestamps)</span></label>
+              <input type="date" id="targetDate">
+            </div>
+
+            <!-- Shift Start & End -->
+            <div class="form-row form-group">
+              <div>
+                <label for="shiftStart">Shift Start Time</label>
+                <input type="time" id="shiftStart" value="09:30">
+              </div>
+              <div>
+                <label for="shiftEnd">Shift End Time</label>
+                <input type="time" id="shiftEnd" value="18:30">
+              </div>
+            </div>
+
+            <!-- Primary Break (Lunch) -->
+            <div class="break-card">
+              <div class="break-card-title">🍽️ Primary Break (Lunch) — Zero Timestamps Allowed</div>
+              <div class="form-row">
+                <div>
+                  <label for="lunchStart">Break Start</label>
+                  <input type="time" id="lunchStart" value="13:00">
+                </div>
+                <div>
+                  <label for="lunchEnd">Break End</label>
+                  <input type="time" id="lunchEnd" value="14:00">
+                </div>
+              </div>
+            </div>
+
+            <!-- Secondary Break (Tea / Snack) -->
+            <div class="break-card" style="background: #fdf4ff; border-color: #f0abfc;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div class="break-card-title" style="color: #86198f; margin-bottom: 0;">☕ Evening / Tea Break (Optional)</div>
+                <label class="checkbox-group" style="margin-top: 0;">
+                  <input type="checkbox" id="break2Enabled">
+                  <span style="font-size: 0.75rem;">Enable</span>
+                </label>
+              </div>
+              <div class="form-row" id="break2Inputs" style="opacity: 0.5; pointer-events: none;">
+                <div>
+                  <label for="break2Start">Break Start</label>
+                  <input type="time" id="break2Start" value="16:30">
+                </div>
+                <div>
+                  <label for="break2End">Break End</label>
+                  <input type="time" id="break2End" value="16:45">
+                </div>
+              </div>
+            </div>
+
+            <!-- Advanced Column & Mode -->
+            <div class="form-row form-group">
+              <div>
+                <label for="timestampColSelect">Timestamp Column</label>
+                <select id="timestampColSelect">
+                  <option value="">Auto Detect</option>
+                </select>
+              </div>
+              <div>
+                <label for="pacingMode">Distribution Pacing</label>
+                <select id="pacingMode">
+                  <option value="natural">Realistic Human Pace (Natural Variance)</option>
+                  <option value="uniform">Strict Equal Intervals</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Start / End Buffers -->
+            <div class="form-row form-group">
+              <div>
+                <label for="startBuffer">Morning Start Buffer <span class="label-hint">(mins after shift start)</span></label>
+                <input type="number" id="startBuffer" value="8" min="0" max="60">
+              </div>
+              <div>
+                <label for="endBuffer">Evening Pack-up Buffer <span class="label-hint">(mins before shift end)</span></label>
+                <input type="number" id="endBuffer" value="8" min="0" max="60">
+              </div>
+            </div>
+
+            <!-- Light Blue Theme Option (User Rule) -->
+            <div class="theme-card">
+              <div class="theme-card-title">🎨 Light Blue Theme Formatting</div>
+              <label class="checkbox-group">
+                <input type="checkbox" id="applyTheme" checked>
+                <span>Apply Light Blue Theme (Dark Blue #1155CC header, alternate #E8F0FE rows & borders)</span>
+              </label>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="btn-group">
+              <button class="btn btn-secondary" id="btnPreview" disabled>
+                <span>🔍 Preview</span>
+              </button>
+              <button class="btn btn-primary" id="btnDivide" disabled>
+                <span id="btnDivideSpinner" class="spinner" style="display: none;"></span>
+                <span id="btnDivideText">⚡ Divide & Download Excel</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Visual Timeline, Stats & Preview -->
+      <section>
+        <!-- Stats Dashboard -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📊 Shift & Workload Summary</div>
+          </div>
+          <div class="card-body">
+            <div class="stats-bar">
+              <div class="stat-box">
+                <div class="stat-label">Total Logs</div>
+                <div class="stat-value" id="statTotalRows">0</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Shift Duration</div>
+                <div class="stat-value" id="statShiftHours">9.0h</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Break Duration</div>
+                <div class="stat-value" id="statBreakHours">1.0h</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Net Work Time</div>
+                <div class="stat-value" id="statWorkHours" style="color: #2563eb;">8.0h</div>
+              </div>
+            </div>
+
+            <!-- Visual Schedule Bar -->
+            <div class="timeline-container">
+              <div class="timeline-header">
+                <span>DAY SCHEDULE TIMELINE</span>
+                <span id="timelinePace">Average: ~0 mins/log</span>
+              </div>
+              <div class="timeline-track" id="timelineTrack">
+                <div class="timeline-seg-work" id="tSeg1" style="width: 38%;"></div>
+                <div class="timeline-seg-break" id="tSegBreak1" style="width: 12%;">LUNCH</div>
+                <div class="timeline-seg-work" id="tSeg2" style="width: 50%;"></div>
+              </div>
+              <div class="timeline-ticks">
+                <span id="tickStart">09:30</span>
+                <span id="tickLunchStart">13:00</span>
+                <span id="tickLunchEnd">14:00</span>
+                <span id="tickEnd">18:30</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview Table Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👁️ Timestamp Comparison Preview</div>
+            <span style="font-size: 0.75rem; color: var(--gray-500);">Showing up to first 50 rows</span>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div class="table-container">
+              <table id="previewTable">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">Row</th>
+                    <th>Original Timestamp</th>
+                    <th>Distributed New Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody id="previewTableBody">
+                  <tr>
+                    <td colspan="3" style="text-align: center; color: var(--gray-400); padding: 36px;">
+                      Upload an Excel file and click <strong>Preview</strong> to inspect timestamps.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="toast">Message</div>
+
+  <script>
+    // State
+    let currentFile = null;
+    let fileMetadata = null;
+
+    // DOM Elements
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfoBox = document.getElementById('fileInfoBox');
+    const fileNameLabel = document.getElementById('fileNameLabel');
+    const fileMetaLabel = document.getElementById('fileMetaLabel');
+    const btnRemoveFile = document.getElementById('btnRemoveFile');
+
+    const targetDateInput = document.getElementById('targetDate');
+    const shiftStartInput = document.getElementById('shiftStart');
+    const shiftEndInput = document.getElementById('shiftEnd');
+    const lunchStartInput = document.getElementById('lunchStart');
+    const lunchEndInput = document.getElementById('lunchEnd');
+    const break2Enabled = document.getElementById('break2Enabled');
+    const break2Inputs = document.getElementById('break2Inputs');
+    const break2StartInput = document.getElementById('break2Start');
+    const break2EndInput = document.getElementById('break2End');
+    const timestampColSelect = document.getElementById('timestampColSelect');
+    const pacingMode = document.getElementById('pacingMode');
+    const startBufferInput = document.getElementById('startBuffer');
+    const endBufferInput = document.getElementById('endBuffer');
+    const applyThemeInput = document.getElementById('applyTheme');
+
+    const btnPreview = document.getElementById('btnPreview');
+    const btnDivide = document.getElementById('btnDivide');
+    const btnDivideSpinner = document.getElementById('btnDivideSpinner');
+    const btnDivideText = document.getElementById('btnDivideText');
+
+    const statTotalRows = document.getElementById('statTotalRows');
+    const statShiftHours = document.getElementById('statShiftHours');
+    const statBreakHours = document.getElementById('statBreakHours');
+    const statWorkHours = document.getElementById('statWorkHours');
+    const timelinePace = document.getElementById('timelinePace');
+
+    const tickStart = document.getElementById('tickStart');
+    const tickLunchStart = document.getElementById('tickLunchStart');
+    const tickLunchEnd = document.getElementById('tickLunchEnd');
+    const tickEnd = document.getElementById('tickEnd');
+    const timelineTrack = document.getElementById('timelineTrack');
+
+    const previewTableBody = document.getElementById('previewTableBody');
+    const toast = document.getElementById('toast');
+
+    // Default date to today
+    targetDateInput.value = new Date().toISOString().split('T')[0];
+
+    // Drag and drop handlers
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleFileSelect(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+      }
+    });
+
+    btnRemoveFile.addEventListener('click', () => {
+      currentFile = null;
+      fileMetadata = null;
+      fileInput.value = '';
+      fileInfoBox.style.display = 'none';
+      dropzone.style.display = 'block';
+      btnPreview.disabled = true;
+      btnDivide.disabled = true;
+      statTotalRows.innerText = '0';
+      previewTableBody.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align: center; color: var(--gray-400); padding: 36px;">
+            Upload an Excel file and click <strong>Preview</strong> to inspect timestamps.
+          </td>
+        </tr>`;
+      updateTimelineVisuals();
+    });
+
+    // Break 2 toggle
+    break2Enabled.addEventListener('change', () => {
+      if (break2Enabled.checked) {
+        break2Inputs.style.opacity = '1';
+        break2Inputs.style.pointerEvents = 'auto';
+      } else {
+        break2Inputs.style.opacity = '0.5';
+        break2Inputs.style.pointerEvents = 'none';
+      }
+      updateTimelineVisuals();
+    });
+
+    // Inputs change triggers timeline calculation
+    [shiftStartInput, shiftEndInput, lunchStartInput, lunchEndInput, break2StartInput, break2EndInput].forEach(inp => {
+      inp.addEventListener('change', updateTimelineVisuals);
+    });
+
+    function showToast(msg, isError = false) {
+      toast.innerText = msg;
+      toast.className = 'toast show ' + (isError ? 'toast-error' : 'toast-success');
+      setTimeout(() => {
+        toast.className = 'toast';
+      }, 3500);
+    }
+
+    async function handleFileSelect(file) {
+      if (!file.name.match(/\.(xlsx|xls)$/i)) {
+        showToast('Please select a valid Excel file (.xlsx or .xls)', true);
+        return;
+      }
+      currentFile = file;
+      fileNameLabel.innerText = file.name;
+      fileMetaLabel.innerText = `Inspecting file... (${(file.size / 1024).toFixed(1)} KB)`;
+      fileInfoBox.style.display = 'flex';
+      dropzone.style.display = 'none';
+
+      // Send inspection request
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const resp = await fetch('/api/inspect', {
+          method: 'POST',
+          body: formData
+        });
+        const res = await resp.json();
+        if (!res.success) {
+          throw new Error(res.error || 'Failed to inspect file');
+        }
+
+        fileMetadata = res.data;
+        fileMetaLabel.innerText = `${fileMetadata.total_rows} data rows • Sheet: ${fileMetadata.active_sheet}`;
+        statTotalRows.innerText = fileMetadata.total_rows;
+
+        if (fileMetadata.detected_date) {
+          targetDateInput.value = fileMetadata.detected_date;
+        }
+
+        // Populate column select
+        timestampColSelect.innerHTML = '';
+        fileMetadata.headers.forEach((h, idx) => {
+          const opt = document.createElement('option');
+          opt.value = h;
+          opt.innerText = `${h} (Col ${idx + 1})`;
+          if (idx + 1 === fileMetadata.timestamp_col_idx || h === fileMetadata.timestamp_col_name) {
+            opt.selected = true;
+          }
+          timestampColSelect.appendChild(opt);
+        });
+
+        btnPreview.disabled = false;
+        btnDivide.disabled = false;
+
+        updateTimelineVisuals();
+        showToast(`Loaded ${fileMetadata.total_rows} rows from ${file.name}`);
+
+        // Trigger automatic preview
+        triggerPreview();
+      } catch (err) {
+        showToast('Error inspecting file: ' + err.message, true);
+        fileMetaLabel.innerText = 'Failed to inspect file';
+      }
+    }
+
+    function timeToMinutes(tStr) {
+      const parts = tStr.split(':');
+      return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    }
+
+    function updateTimelineVisuals() {
+      const sStart = timeToMinutes(shiftStartInput.value || '09:30');
+      const sEnd = timeToMinutes(shiftEndInput.value || '18:30');
+      const lStart = timeToMinutes(lunchStartInput.value || '13:00');
+      const lEnd = timeToMinutes(lunchEndInput.value || '14:00');
+
+      tickStart.innerText = shiftStartInput.value;
+      tickLunchStart.innerText = lunchStartInput.value;
+      tickLunchEnd.innerText = lunchEndInput.value;
+      tickEnd.innerText = shiftEndInput.value;
+
+      const totalShiftMin = Math.max(1, sEnd - sStart);
+      let totalBreakMin = Math.max(0, lEnd - lStart);
+
+      if (break2Enabled.checked) {
+        const b2Start = timeToMinutes(break2StartInput.value || '16:30');
+        const b2End = timeToMinutes(break2EndInput.value || '16:45');
+        totalBreakMin += Math.max(0, b2End - b2Start);
+      }
+
+      const netWorkMin = Math.max(0, totalShiftMin - totalBreakMin);
+
+      statShiftHours.innerText = (totalShiftMin / 60).toFixed(1) + 'h';
+      statBreakHours.innerText = (totalBreakMin / 60).toFixed(1) + 'h';
+      statWorkHours.innerText = (netWorkMin / 60).toFixed(1) + 'h';
+
+      const rows = fileMetadata ? fileMetadata.total_rows : 0;
+      if (rows > 0 && netWorkMin > 0) {
+        const avgMin = (netWorkMin / rows).toFixed(1);
+        timelinePace.innerText = `Average: ~${avgMin} mins/log`;
+      } else {
+        timelinePace.innerText = 'Average: ~0 mins/log';
+      }
+
+      // Rebuild timeline track segments
+      const seg1_min = Math.max(0, lStart - sStart);
+      const lunch_min = Math.max(0, lEnd - lStart);
+      const seg2_min = Math.max(0, sEnd - lEnd);
+
+      const p1 = ((seg1_min / totalShiftMin) * 100).toFixed(1);
+      const pLunch = ((lunch_min / totalShiftMin) * 100).toFixed(1);
+      const p2 = ((seg2_min / totalShiftMin) * 100).toFixed(1);
+
+      timelineTrack.innerHTML = `
+        <div class="timeline-seg-work" style="width: ${p1}%;"></div>
+        <div class="timeline-seg-break" style="width: ${pLunch}%;">LUNCH</div>
+        <div class="timeline-seg-work" style="width: ${p2}%;"></div>
+      `;
+    }
+
+    async function triggerPreview() {
+      if (!currentFile) return;
+
+      btnPreview.disabled = true;
+      previewTableBody.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align: center; color: var(--gray-500); padding: 24px;">
+            Calculating time distributions...
+          </td>
+        </tr>`;
+
+      const formData = new FormData();
+      formData.append('file', currentFile);
+      formData.append('target_date', targetDateInput.value);
+      formData.append('shift_start', shiftStartInput.value);
+      formData.append('shift_end', shiftEndInput.value);
+      formData.append('lunch_start', lunchStartInput.value);
+      formData.append('lunch_end', lunchEndInput.value);
+      formData.append('break2_enabled', break2Enabled.checked ? 'true' : 'false');
+      formData.append('break2_start', break2StartInput.value);
+      formData.append('break2_end', break2EndInput.value);
+      formData.append('timestamp_col', timestampColSelect.value || '');
+      formData.append('mode', pacingMode.value);
+      formData.append('start_buffer', startBufferInput.value);
+      formData.append('end_buffer', endBufferInput.value);
+      formData.append('apply_theme', applyThemeInput.checked ? 'true' : 'false');
+
+      try {
+        const resp = await fetch('/api/preview', {
+          method: 'POST',
+          body: formData
+        });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error || 'Preview calculation failed');
+
+        const stats = res.stats;
+        statWorkHours.innerText = stats.working_hours + 'h';
+        timelinePace.innerText = `Average: ~${stats.avg_minutes_per_log} mins/log`;
+
+        // Render rows
+        let rowsHtml = '';
+        stats.preview_comparisons.forEach(item => {
+          rowsHtml += `
+            <tr>
+              <td class="mono-cell">${item.row_num}</td>
+              <td class="mono-cell" style="color: var(--gray-500);">${item.original || '—'}</td>
+              <td class="mono-cell new-ts-cell">${item.new}</td>
+            </tr>
+          `;
+        });
+        previewTableBody.innerHTML = rowsHtml;
+        showToast('Preview updated successfully!');
+      } catch (err) {
+        showToast('Preview error: ' + err.message, true);
+        previewTableBody.innerHTML = `
+          <tr>
+            <td colspan="3" style="text-align: center; color: var(--danger); padding: 24px;">
+              ${err.message}
+            </td>
+          </tr>`;
+      } finally {
+        btnPreview.disabled = false;
+      }
+    }
+
+    btnPreview.addEventListener('click', triggerPreview);
+
+    // Process & Download
+    btnDivide.addEventListener('click', async () => {
+      if (!currentFile) return;
+
+      btnDivide.disabled = true;
+      btnDivideSpinner.style.display = 'inline-block';
+      btnDivideText.innerText = 'Processing Excel...';
+
+      const formData = new FormData();
+      formData.append('file', currentFile);
+      formData.append('target_date', targetDateInput.value);
+      formData.append('shift_start', shiftStartInput.value);
+      formData.append('shift_end', shiftEndInput.value);
+      formData.append('lunch_start', lunchStartInput.value);
+      formData.append('lunch_end', lunchEndInput.value);
+      formData.append('break2_enabled', break2Enabled.checked ? 'true' : 'false');
+      formData.append('break2_start', break2StartInput.value);
+      formData.append('break2_end', break2EndInput.value);
+      formData.append('timestamp_col', timestampColSelect.value || '');
+      formData.append('mode', pacingMode.value);
+      formData.append('start_buffer', startBufferInput.value);
+      formData.append('end_buffer', endBufferInput.value);
+      formData.append('apply_theme', applyThemeInput.checked ? 'true' : 'false');
+
+      try {
+        const resp = await fetch('/api/divide', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!resp.ok) {
+          const errData = await resp.json();
+          throw new Error(errData.error || 'Failed to process file');
+        }
+
+        // Extract filename from header
+        let filename = 'log_divided.xlsx';
+        const disposition = resp.headers.get('Content-Disposition');
+        if (disposition && disposition.indexOf('filename=') !== -1) {
+          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+          if (matches != null && matches[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+          }
+        }
+
+        const blob = await resp.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        a.remove();
+
+        showToast(`Downloaded: ${filename}`);
+      } catch (err) {
+        showToast('Error processing file: ' + err.message, true);
+      } finally {
+        btnDivide.disabled = false;
+        btnDivideSpinner.style.display = 'none';
+        btnDivideText.innerText = '⚡ Divide & Download Excel';
+      }
+    });
+
+    // Initial timeline
+    updateTimelineVisuals();
+  </script>
+</body>
+</html>
