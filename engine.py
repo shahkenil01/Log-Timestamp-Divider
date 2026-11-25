@@ -1,9 +1,13 @@
 """
-Log Timestamp Divider - Core Engine
-Processes Excel log sheets and distributes timestamps across shift hours,
-strictly excluding break intervals (e.g., lunch, tea break).
-Supports both realistic human pace and strictly uniform intervals,
-as well as optional Light Blue Theme styling.
+Log Timestamp Divider - Core Engine (Action-Aware & Genuine Human Pacing)
+Calculates highly realistic, non-predictable timestamps based on real-world action types:
+1. 'Insert Provision' / 'Add': 5 to 22 seconds (rapid insertion flow).
+2. 'Edit Provision' / 'Update': 20 to 52 seconds (text modification/correction).
+3. 'Bulk Delete': 2.5 to 5.5 minutes (careful review & multi-entry verification).
+4. 'Delete Provision': 35 to 85 seconds.
+5. Cluster/Session Pauses: Real human reading, cross-referencing & gazette study pauses
+   naturally distribute the workload across the entire shift from start to end.
+6. Zero timestamps during Lunch or Evening breaks.
 """
 
 import io
@@ -15,15 +19,25 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-# Common column name patterns for timestamps
 TIMESTAMP_CANDIDATES = [
     "timestamp", "time", "date_time", "datetime", "log_time", "time_stamp",
     "date", "created_at", "updated_at", "modified_at", "action_time", "entry_time"
 ]
 
+ACTION_CANDIDATES = [
+    "action", "action_type", "operation", "activity", "type", "action type", "event"
+]
+
+ACT_CANDIDATES = [
+    "act_name", "act", "act_title", "title", "actname", "law", "statute"
+]
+
+DESC_CANDIDATES = [
+    "basic_description", "description", "desc", "details", "remark", "notes", "what is changed"
+]
+
 
 def parse_time_str(val):
-    """Parse time string like '09:30', '9:30 AM', '18:30:00' into datetime.time."""
     if isinstance(val, datetime.time):
         return val
     if isinstance(val, datetime.datetime):
@@ -36,7 +50,6 @@ def parse_time_str(val):
             return datetime.datetime.strptime(val_str, fmt).time()
         except ValueError:
             pass
-    # Try regex fallback for e.g. "9:30am" or "13:45"
     m = re.match(r"^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$", val_str, re.IGNORECASE)
     if m:
         hr = int(m.group(1))
@@ -52,7 +65,6 @@ def parse_time_str(val):
 
 
 def parse_date_str(val):
-    """Parse date string into datetime.date."""
     if isinstance(val, datetime.date):
         return val
     if isinstance(val, datetime.datetime):
@@ -65,18 +77,32 @@ def parse_date_str(val):
             return datetime.datetime.strptime(val_str, fmt).date()
         except ValueError:
             pass
-    # Fallback to regex extracting YYYY-MM-DD
     m = re.search(r"(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})", val_str)
     if m:
         return datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
     return datetime.date.today()
 
 
+def classify_action(action_str, desc_str=""):
+    """
+    Classifies a log row action into specific categories based on action type
+    and description text.
+    """
+    t = (str(action_str or "") + " " + str(desc_str or "")).lower().strip()
+    if "bulk delete" in t or "bulk clear" in t:
+        return "bulk_delete"
+    elif "delete" in t or "remove" in t:
+        return "delete"
+    elif "insert" in t or "add" in t or "new" in t:
+        return "insert_provision"
+    elif "edit" in t or "update" in t or "modify" in t or "merge" in t:
+        return "edit_provision"
+    elif "review" in t or "format" in t or "check" in t:
+        return "review"
+    return "default"
+
+
 def detect_excel_info(file_bytes_or_path, sheet_name=None):
-    """
-    Inspects an Excel file and extracts sheet names, headers, candidate timestamp
-    columns, total row count, sample data, and auto-detected date.
-    """
     if isinstance(file_bytes_or_path, (str, Path)):
         wb = openpyxl.load_workbook(file_bytes_or_path, read_only=True, data_only=True)
     else:
@@ -86,8 +112,6 @@ def detect_excel_info(file_bytes_or_path, sheet_name=None):
     target_sheet = sheet_name if sheet_name in sheet_names else wb.active.title
     ws = wb[target_sheet]
 
-    rows = []
-    # Read rows up to a safe sample limit
     row_count = 0
     headers = []
     sample_rows = []
@@ -98,13 +122,11 @@ def detect_excel_info(file_bytes_or_path, sheet_name=None):
             headers = [str(c).strip() if c is not None else f"Column_{i+1}" for i, c in enumerate(row_values)]
             continue
 
-        # Check if row is non-empty
         if any(c is not None and str(c).strip() != "" for c in row_values):
             row_count += 1
             if len(sample_rows) < 10:
                 sample_rows.append([str(c) if c is not None else "" for c in row_values])
-            
-            # Try to detect date from row values
+
             if not detected_date:
                 for c in row_values:
                     if isinstance(c, datetime.datetime) or isinstance(c, datetime.date):
@@ -134,7 +156,6 @@ def detect_excel_info(file_bytes_or_path, sheet_name=None):
         if timestamp_col_name:
             break
 
-    # If header match not found, check column 2 (frequently used as Timestamp) or default to 1
     if not timestamp_col_name:
         if len(headers) >= 2:
             timestamp_col_idx = 2
@@ -155,30 +176,28 @@ def detect_excel_info(file_bytes_or_path, sheet_name=None):
     }
 
 
-def generate_timestamps(
+def generate_action_realistic_timeline(
     target_date,
     shift_start,
     shift_end,
     breaks,
-    num_rows,
+    row_actions,
+    row_acts=None,
     mode="natural",
     start_buffer_minutes=8,
     end_buffer_minutes=8,
     random_seed=None
 ):
     """
-    Generates `num_rows` strictly ascending timestamps within the shift window,
-    completely bypassing break windows.
-
-    - target_date: datetime.date
-    - shift_start: datetime.time
-    - shift_end: datetime.time
-    - breaks: list of (datetime.time, datetime.time)
-    - num_rows: int
-    - mode: 'natural' (realistic human task duration variance) or 'uniform'
-    - start_buffer_minutes: delay after shift start before 1st task
-    - end_buffer_minutes: gap before shift end after last task
+    Action-aware human pace distribution:
+    - Insert Provision: 5 to 22 seconds (rapid insertion)
+    - Edit Provision: 20 to 52 seconds
+    - Bulk Delete: 2.5 to 5.5 minutes (careful review)
+    - Delete: 35 to 80 seconds
+    - Natural reading / cross-reference pauses between clusters and act switches
+      distribute the work authentically across the entire shift.
     """
+    num_rows = len(row_actions)
     if num_rows <= 0:
         return []
 
@@ -191,7 +210,6 @@ def generate_timestamps(
     d_end = datetime.datetime.combine(target_date, shift_end) - datetime.timedelta(minutes=end_buffer_minutes)
 
     if d_start >= d_end:
-        # Fallback if buffers too large
         d_start = datetime.datetime.combine(target_date, shift_start) + datetime.timedelta(minutes=1)
         d_end = datetime.datetime.combine(target_date, shift_end) - datetime.timedelta(minutes=1)
 
@@ -205,7 +223,6 @@ def generate_timestamps(
         b_dt_end = datetime.datetime.combine(target_date, be)
         if b_dt_start >= b_dt_end:
             continue
-        # Clip to shift boundaries
         b_clip_s = max(d_start, b_dt_start)
         b_clip_e = min(d_end, b_dt_end)
         if b_clip_s < b_clip_e:
@@ -213,7 +230,6 @@ def generate_timestamps(
 
     clean_breaks.sort(key=lambda x: x[0])
 
-    # Merge overlapping or touching breaks
     merged_breaks = []
     for b in clean_breaks:
         if not merged_breaks:
@@ -225,7 +241,7 @@ def generate_timestamps(
             else:
                 merged_breaks.append(b)
 
-    # Build active working segments
+    # Active working segments
     segments = []
     cur = d_start
     for bs, be in merged_breaks:
@@ -242,77 +258,136 @@ def generate_timestamps(
         raise ValueError("No working time available in the shift after subtracting breaks.")
 
     if num_rows == 1:
-        offsets = [total_working_sec * 0.15]
-    elif mode == "uniform":
-        # Strictly uniform spacing across the working seconds
+        return [segments[0][0] + datetime.timedelta(minutes=rng.randint(3, 8))]
+
+    if mode == "uniform":
+        # Strict uniform spacing
         step = total_working_sec / (num_rows + 1)
         offsets = [step * (i + 1) for i in range(num_rows)]
     else:
-        # Natural human pace distribution
-        # Tasks have natural variation (e.g., between 2 min and 8 min depending on total rows)
-        weights = [rng.uniform(0.65, 1.45) for _ in range(num_rows - 1)]
-        sum_w = sum(weights)
-        norm_weights = [w / sum_w for w in weights]
+        # Natural Action-Aware Human Distribution
+        types = [classify_action(a) for a in row_actions]
 
-        # Margin at start and end
-        margin = min(180.0, total_working_sec * 0.03)
-        usable_sec = max(10.0, total_working_sec - 2 * margin)
+        intrinsic_gaps = []
+        is_session_break = []
 
-        raw_offsets = [0.0]
-        cur_offset = 0.0
-        for w in norm_weights:
-            cur_offset += w * usable_sec
-            raw_offsets.append(cur_offset)
+        rows_since_break = 0
+        target_cluster_size = rng.randint(4, 8)
 
-        # Add small random jitter (±3 to ±10 sec) while strictly preserving monotonicity
-        offsets = []
-        last_val = 0.0
-        min_step = max(5.0, usable_sec / (num_rows * 3.5))
+        for i in range(1, num_rows):
+            cur_type = types[i]
+            prev_act = str(row_acts[i - 1] or "").strip() if row_acts else ""
+            cur_act = str(row_acts[i] or "").strip() if row_acts else ""
+            act_changed = bool(prev_act and cur_act and prev_act.lower() != cur_act.lower())
 
-        for idx, ro in enumerate(raw_offsets):
-            val = margin + ro
-            if idx > 0:
-                jitter = rng.uniform(-4.0, 4.0)
-                val = max(last_val + min_step, val + jitter)
-            offsets.append(val)
-            last_val = val
+            # 1. Realistic Action-based delay
+            if cur_type == "bulk_delete":
+                # Bulk delete: 2.5 to 5.5 minutes (150s to 330s)
+                gap = rng.uniform(160.0, 330.0)
+            elif cur_type == "delete":
+                # Single delete: 35 to 80 seconds
+                gap = rng.uniform(35.0, 80.0)
+            elif cur_type == "insert_provision":
+                # Rapid insertion: 5 to 22 seconds (5, 10, 15, 20s as requested)
+                gap = rng.uniform(6.0, 22.0)
+            elif cur_type == "edit_provision":
+                # Edit: 20 to 52 seconds (20, 30-40, 50s as requested)
+                gap = rng.uniform(20.0, 52.0)
+            elif cur_type == "review":
+                # Review / Format: 35 to 75 seconds
+                gap = rng.uniform(35.0, 75.0)
+            else:
+                gap = rng.uniform(22.0, 48.0)
 
-        # If last offset went past usable bounds, normalize back
-        if offsets[-1] > total_working_sec:
-            scale = (total_working_sec - margin) / offsets[-1]
-            offsets = [off * scale for off in offsets]
+            # Add natural jitter
+            gap += rng.uniform(-2.0, 3.5)
+            gap = max(4.0, gap)
 
-    # Map each virtual offset in [0, total_working_sec] into actual datetime
-    result_timestamps = []
+            intrinsic_gaps.append(gap)
+
+        sum_intrinsic = sum(intrinsic_gaps)
+        target_span = total_working_sec * 0.94
+        extra_time = max(0.0, target_span - sum_intrinsic)
+
+        # Distribute working sessions naturally across the day
+        if num_rows <= 3:
+            num_pauses = num_rows - 1
+        else:
+            num_pauses = max(2, min(num_rows - 1, int(num_rows / 3) + 1))
+
+        is_session_break = [False] * (num_rows - 1)
+        candidate_indices = []
+        for i in range(1, num_rows):
+            prev_act = str(row_acts[i - 1] or "").strip() if row_acts else ""
+            cur_act = str(row_acts[i] or "").strip() if row_acts else ""
+            if prev_act and cur_act and prev_act.lower() != cur_act.lower():
+                is_session_break[i - 1] = True
+            else:
+                candidate_indices.append(i - 1)
+
+        current_pauses = sum(1 for p in is_session_break if p)
+        needed = max(0, num_pauses - current_pauses)
+        if needed > 0 and candidate_indices:
+            step = max(1, len(candidate_indices) // (needed + 1))
+            for k in range(needed):
+                idx = candidate_indices[min(len(candidate_indices) - 1, (k + 1) * step)]
+                is_session_break[idx] = True
+
+        actual_pauses = sum(1 for p in is_session_break if p)
+
+        final_gaps = []
+        if actual_pauses > 0 and extra_time > 0:
+            break_weights = [rng.uniform(0.7, 1.3) for _ in range(actual_pauses)]
+            sum_bw = sum(break_weights)
+            break_additions = [(w / sum_bw) * extra_time for w in break_weights]
+            b_idx = 0
+            for i, g in enumerate(intrinsic_gaps):
+                if is_session_break[i]:
+                    final_gaps.append(g + break_additions[b_idx])
+                    b_idx += 1
+                else:
+                    final_gaps.append(g)
+        else:
+            final_gaps = list(intrinsic_gaps)
+
+        # Convert to cumulative offsets
+        start_offset = min(180.0, total_working_sec * 0.02)
+        offsets = [start_offset]
+        cur_off = start_offset
+        for g in final_gaps:
+            cur_off += g
+            offsets.append(cur_off)
+
+    # Map each offset to actual datetime
+    results = []
     for off in offsets:
         rem = off
         placed = False
         for (s_start, s_end), dur in zip(segments, durations):
             if rem <= dur:
-                dt = s_start + datetime.timedelta(seconds=rem)
-                result_timestamps.append(dt)
+                dt = s_start + datetime.timedelta(seconds=round(rem))
+                results.append(dt)
                 placed = True
                 break
             else:
                 rem -= dur
         if not placed:
-            result_timestamps.append(segments[-1][1] - datetime.timedelta(seconds=1))
+            results.append(segments[-1][1] - datetime.timedelta(seconds=rng.randint(3, 10)))
 
-    # Ensure strictly non-decreasing and no microsecond artifacts
-    result_clean = []
+    # Strictly guarantee ascending timestamps & zero timestamps during breaks
+    clean_results = []
     prev_dt = None
-    for dt in result_timestamps:
-        dt_sec = dt.replace(microsecond=0)
-        if prev_dt is not None and dt_sec <= prev_dt:
-            dt_sec = prev_dt + datetime.timedelta(seconds=1)
-        # Double check it does not sit inside a break
+    for dt in results:
+        cur_dt = dt.replace(microsecond=0)
+        if prev_dt is not None and cur_dt <= prev_dt:
+            cur_dt = prev_dt + datetime.timedelta(seconds=rng.randint(5, 12))
         for bs, be in merged_breaks:
-            if bs <= dt_sec <= be:
-                dt_sec = be + datetime.timedelta(seconds=rng.randint(30, 90))
-        result_clean.append(dt_sec)
-        prev_dt = dt_sec
+            if bs <= cur_dt <= be:
+                cur_dt = be + datetime.timedelta(seconds=rng.randint(25, 75))
+        clean_results.append(cur_dt)
+        prev_dt = cur_dt
 
-    return result_clean
+    return clean_results
 
 
 def distribute_excel_timestamps(
@@ -329,10 +404,6 @@ def distribute_excel_timestamps(
     apply_light_blue_theme=False,
     output_path=None
 ):
-    """
-    Loads Excel, computes distributed timestamps, writes them back, applies styling
-    if requested, and saves either to disk or returns bytes.
-    """
     if isinstance(file_bytes_or_path, (str, Path)):
         wb = openpyxl.load_workbook(file_bytes_or_path)
     else:
@@ -341,7 +412,6 @@ def distribute_excel_timestamps(
     target_sheet = sheet_name if sheet_name and sheet_name in wb.sheetnames else wb.active.title
     ws = wb[target_sheet]
 
-    # Parse parameters
     target_date = parse_date_str(target_date_str)
     shift_start = parse_time_str(shift_start_str) or datetime.time(9, 30)
     shift_end = parse_time_str(shift_end_str) or datetime.time(18, 30)
@@ -354,36 +424,62 @@ def distribute_excel_timestamps(
             if bs and be and bs < be:
                 clean_breaks.append((bs, be))
 
-    # Find headers and timestamp column
     first_row = [cell.value for cell in ws[1]]
     total_cols = len(first_row)
 
+    # Detect Columns
     ts_col_idx = 1
-    if timestamp_col is not None:
-        if isinstance(timestamp_col, int):
-            ts_col_idx = timestamp_col
+    action_col_idx = None
+    act_col_idx = None
+    desc_col_idx = None
+
+    for idx, h in enumerate(first_row, start=1):
+        if not h:
+            continue
+        clean_h = re.sub(r"[^a-zA-Z0-9]", "", str(h).lower())
+
+        # Timestamp column
+        if timestamp_col is not None:
+            if isinstance(timestamp_col, int) and idx == timestamp_col:
+                ts_col_idx = idx
+            elif str(h).strip().lower() == str(timestamp_col).strip().lower():
+                ts_col_idx = idx
         else:
-            col_str = str(timestamp_col).strip().lower()
-            for idx, h in enumerate(first_row, start=1):
-                if h and str(h).strip().lower() == col_str:
-                    ts_col_idx = idx
-                    break
-    else:
-        # Auto detect
-        for idx, h in enumerate(first_row, start=1):
-            clean_h = re.sub(r"[^a-zA-Z0-9]", "", str(h or "").lower())
             for cand in TIMESTAMP_CANDIDATES:
                 if cand in clean_h:
                     ts_col_idx = idx
                     break
-            if ts_col_idx > 1:
-                break
-        if ts_col_idx == 1 and total_cols >= 2:
-            ts_col_idx = 2
 
-    # Find all non-empty rows
+        # Action column
+        if not action_col_idx:
+            for cand in ACTION_CANDIDATES:
+                if cand in clean_h:
+                    action_col_idx = idx
+                    break
+
+        # Act Name column
+        if not act_col_idx:
+            for cand in ACT_CANDIDATES:
+                if cand in clean_h:
+                    act_col_idx = idx
+                    break
+
+        # Description column
+        if not desc_col_idx:
+            for cand in DESC_CANDIDATES:
+                if cand in clean_h:
+                    desc_col_idx = idx
+                    break
+
+    if ts_col_idx == 1 and total_cols >= 2 and timestamp_col is None:
+        ts_col_idx = 2
+
+    # Collect data rows and action details
     data_row_indices = []
     original_timestamps = []
+    row_actions = []
+    row_acts = []
+
     for r_idx in range(2, ws.max_row + 1):
         row_vals = [ws.cell(row=r_idx, column=c).value for c in range(1, total_cols + 1)]
         if any(v is not None and str(v).strip() != "" for v in row_vals):
@@ -391,23 +487,32 @@ def distribute_excel_timestamps(
             orig_ts = ws.cell(row=r_idx, column=ts_col_idx).value
             original_timestamps.append(str(orig_ts or "").strip())
 
+            act_val = ws.cell(row=r_idx, column=action_col_idx).value if action_col_idx else ""
+            desc_val = ws.cell(row=r_idx, column=desc_col_idx).value if desc_col_idx else ""
+            act_name_val = ws.cell(row=r_idx, column=act_col_idx).value if act_col_idx else ""
+
+            combined_action = f"{act_val or ''} {desc_val or ''}".strip()
+            row_actions.append(combined_action or "default")
+            row_acts.append(str(act_name_val or ""))
+
     num_rows = len(data_row_indices)
     if num_rows == 0:
         raise ValueError("No data rows found in the selected sheet to update.")
 
-    # Generate new timestamps
-    new_timestamps = generate_timestamps(
+    # Generate action-realistic timestamps
+    new_timestamps = generate_action_realistic_timeline(
         target_date=target_date,
         shift_start=shift_start,
         shift_end=shift_end,
         breaks=clean_breaks,
-        num_rows=num_rows,
+        row_actions=row_actions,
+        row_acts=row_acts,
         mode=mode,
         start_buffer_minutes=start_buffer_minutes,
         end_buffer_minutes=end_buffer_minutes
     )
 
-    # Theme styles
+    # Light Blue Theme styles
     header_fill = PatternFill(start_color="1155CC", end_color="1155CC", fill_type="solid")
     header_font = Font(name="Segoe UI", size=11, bold=True, color="FFFFFF")
     even_row_fill = PatternFill(start_color="E8F0FE", end_color="E8F0FE", fill_type="solid")
@@ -421,7 +526,6 @@ def distribute_excel_timestamps(
     center_align = Alignment(horizontal="center", vertical="center")
     left_align = Alignment(horizontal="left", vertical="center")
 
-    # Update cells
     for pos, r_idx in enumerate(data_row_indices):
         dt_val = new_timestamps[pos]
         dt_str = dt_val.strftime("%Y-%m-%d %H:%M:%S")
@@ -429,7 +533,6 @@ def distribute_excel_timestamps(
         cell.value = dt_str
 
         if apply_light_blue_theme:
-            # Row index 2 is first data row -> Even row in 1-based indexing
             row_fill = even_row_fill if (r_idx % 2 == 0) else odd_row_fill
             for c_idx in range(1, total_cols + 1):
                 c_cell = ws.cell(row=r_idx, column=c_idx)
@@ -442,7 +545,6 @@ def distribute_excel_timestamps(
                     c_cell.alignment = left_align
 
     if apply_light_blue_theme:
-        # Style Header Row
         ws.row_dimensions[1].height = 28
         ws.freeze_panes = "A2"
         for c_idx in range(1, total_cols + 1):
@@ -452,7 +554,6 @@ def distribute_excel_timestamps(
             h_cell.border = thin_border
             h_cell.alignment = center_align
 
-    # Calculate statistics
     shift_duration_sec = (datetime.datetime.combine(target_date, shift_end) - datetime.datetime.combine(target_date, shift_start)).total_seconds()
     break_total_sec = sum(
         (datetime.datetime.combine(target_date, be) - datetime.datetime.combine(target_date, bs)).total_seconds()
@@ -482,7 +583,6 @@ def distribute_excel_timestamps(
         ]
     }
 
-    # Save output
     if output_path:
         out_p = Path(output_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
