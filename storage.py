@@ -18,7 +18,10 @@ import secrets
 import base64
 import threading
 from pathlib import Path
-import requests
+try:
+    import requests
+except ImportError:
+    requests = None
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -69,7 +72,7 @@ GITHUB_HEADERS = {
 
 def github_pull_cloud_file(remote_filename):
     """Fetches a JSON file from the GitHub data-store branch."""
-    if not GITHUB_TOKEN:
+    if not GITHUB_TOKEN or not requests:
         return None
     try:
         url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{remote_filename}?ref={GITHUB_DATA_BRANCH}"
@@ -86,7 +89,7 @@ def github_pull_cloud_file(remote_filename):
 
 def github_push_cloud_file(remote_filename, data_obj, commit_msg="Cloud Sync update"):
     """Pushes a JSON object to the GitHub data-store branch without triggering Render rebuilds."""
-    if not GITHUB_TOKEN:
+    if not GITHUB_TOKEN or not requests:
         return False
     try:
         # Get existing file SHA if present
@@ -464,38 +467,38 @@ def create_approval_request(
         "preview_comparisons": stats.get("preview_comparisons", [])[:50]
     }
 
-    requests = load_all_requests(date_filter=None)
-    requests.insert(0, req_data)
-    save_all_requests(requests)
+    all_requests = load_all_requests(date_filter=None)
+    all_requests.insert(0, req_data)
+    save_all_requests(all_requests)
     return req_data
 
 
 def get_request_by_id(req_id):
-    requests = load_all_requests(date_filter=None)
-    for r in requests:
+    all_requests = load_all_requests(date_filter=None)
+    for r in all_requests:
         if r["id"] == req_id:
             return r
     return None
 
 
 def approve_request(req_id):
-    requests = load_all_requests(date_filter=None)
-    for r in requests:
+    all_requests = load_all_requests(date_filter=None)
+    for r in all_requests:
         if r["id"] == req_id:
             r["status"] = "APPROVED"
             r["approved_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
-            save_all_requests(requests)
+            save_all_requests(all_requests)
             return True, r
     return False, None
 
 
 def reject_request(req_id, reason="Timing mismatch or excessive break taken"):
-    requests = load_all_requests(date_filter=None)
-    for r in requests:
+    all_requests = load_all_requests(date_filter=None)
+    for r in all_requests:
         if r["id"] == req_id:
             r["status"] = "REJECTED"
             r["rejection_reason"] = reason or "Rejected by Admin"
-            save_all_requests(requests)
+            save_all_requests(all_requests)
             return True, r
     return False, None
 
@@ -532,7 +535,7 @@ def list_all_releases():
     Guarantees releases NEVER disappear when Render redeploys or restarts.
     """
     init_storage()
-    if GITHUB_TOKEN:
+    if GITHUB_TOKEN and requests:
         try:
             url = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
             resp = requests.get(url, headers=GITHUB_HEADERS, timeout=8)
@@ -597,7 +600,7 @@ def save_release_file(original_filename, file_bytes, title="", description="", u
     rel_desc = (description or "").strip()
 
     # If GitHub token is configured, publish directly to GitHub Releases
-    if GITHUB_TOKEN:
+    if GITHUB_TOKEN and requests:
         try:
             tag_name = "v" + time.strftime("%Y%m%d-%H%M%S")
             create_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
@@ -714,7 +717,7 @@ def delete_release_file(rel_id):
         raise ValueError("Release not found.")
 
     # Delete from GitHub Releases
-    if GITHUB_TOKEN and str(rel_id).isdigit():
+    if GITHUB_TOKEN and requests and str(rel_id).isdigit():
         try:
             del_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/{rel_id}"
             requests.delete(del_url, headers=GITHUB_HEADERS, timeout=10)
