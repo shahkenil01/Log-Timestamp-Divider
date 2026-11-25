@@ -20,7 +20,7 @@ A high-performance web platform designed for team shift workload distribution, s
    - **Preview Locked**: Interns/users can preview up to 50 sample rows.
    - **Download Protection**: Full Excel download is strictly locked until verified and approved by an Admin.
    - **Multi-Admin Dashboard**: Date-filtered approval queue for shift in-charges.
-   - **Master Admin Portal (`kenil` / `canon`)**: Super-admin controls to add, update, or remove Admin accounts.
+   - **Master Admin Portal**: Super-admin controls to manage Admin accounts, releases, and `.env` credentials via API/UI.
 
 3. **ActMaster Software Zip Release Center**:
    - **Public 1-Click Downloads**: Team members can download the latest ActMaster software zip packages directly from the main navigation.
@@ -56,11 +56,12 @@ Log_Timestamp_Divider/
 ## 🚀 Deployment & Local Running
 
 ### Local Run:
+1. Copy `.env.example` to `.env` and fill in your `MASTER_USERNAME`, `MASTER_PASSWORD`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `GITHUB_TOKEN`, `GITHUB_REPO`, and `PORT`.
 ```bash
 pip install -r requirements.txt
 python server.py
 ```
-Open `http://localhost:8899/` in your browser.
+Open the URL printed in the terminal (configured via `PORT` in `.env`).
 
 ### Cloud Deployment:
 Pre-configured for 1-click continuous deployment on **Render.com** linked to the GitHub repository:

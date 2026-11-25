@@ -876,7 +876,7 @@
         <div>
           <h2>📦 ActMaster Software Releases & Updates</h2>
           <p style="font-size: 0.775rem; color: #cbd5e1; margin-top: 2px;">
-            Official software packages and zip updates uploaded by Kenil for team members.
+            Official software packages and zip updates uploaded by Master Admin for team members.
           </p>
         </div>
         <button class="btn-close-modal" id="btnCloseZipModal">&times;</button>
@@ -904,13 +904,13 @@
   <!-- ===================================================================== -->
   <!-- ZIP DOWNLOAD PASSWORD VERIFICATION MODAL                              -->
   <!-- ===================================================================== -->
-  <div class="modal-overlay" id="zipPasswordModal">
+  <div class="modal-overlay" id="zipPasswordModal" style="z-index: 3000 !important;">
     <div class="modal-card" style="max-width: 480px;">
       <div class="modal-header" style="background: linear-gradient(135deg, #1e293b 0%, #0369a1 100%);">
         <div>
           <h3 style="color: #fff; margin: 0; font-size: 1.05rem;">🔐 Security Password Required</h3>
           <p style="font-size: 0.775rem; color: #94a3b8; margin-top: 2px;">
-            This release is protected. Enter the password provided by Admin (Kenil).
+            This release is protected. Enter the password provided by Master Admin.
           </p>
         </div>
         <button class="btn-close-modal" id="btnCloseZipPasswordModal">&times;</button>
@@ -927,13 +927,13 @@
               Enter Download Password <span style="color: #ef4444;">*</span>
             </label>
             <div style="position: relative;">
-              <input type="password" id="zipDownloadPasswordInput" class="input-highlight" placeholder="Enter password (provided by Kenil)" required style="padding-right: 42px;">
+              <input type="password" id="zipDownloadPasswordInput" class="input-highlight" placeholder="Enter download password" required style="padding-right: 42px;">
               <button type="button" id="btnToggleZipPwdVisibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.1rem; color: var(--gray-500); padding: 0;">
                 👁️
               </button>
             </div>
             <span id="zipPwdErrorText" style="display: none; color: #dc2626; font-size: 0.75rem; margin-top: 4px; font-weight: 600;">
-              ⚠️ Incorrect password! Please contact Admin (Kenil) for the password.
+              ⚠️ Incorrect password! Please contact Master Admin for the password.
             </span>
           </div>
 
@@ -981,7 +981,7 @@
             </button>
             <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--gray-200);">
               <a href="javascript:void(0)" id="linkOpenMasterLogin" style="color: #64748b; font-size: 0.775rem; text-decoration: underline; font-weight: 600;">
-                🔑 Master Admin Portal (Kenil)
+                🔑 Master Admin Portal
               </a>
             </div>
           </form>
@@ -991,11 +991,11 @@
         <div class="login-box" id="masterLoginBox" style="display: none;">
           <div style="font-size: 38px; margin-bottom: 8px;">👑</div>
           <h3>Master Admin Login</h3>
-          <p>Restricted access for Kenil / Canon to manage admin credentials.</p>
+          <p>Restricted Super Admin access to manage credentials, releases, and .env keys.</p>
           <form id="masterLoginForm">
             <div class="form-group" style="text-align: left;">
               <label for="masterUsername">Master Username</label>
-              <input type="text" id="masterUsername" placeholder="Master Username (kenil / canon)" required>
+              <input type="text" id="masterUsername" placeholder="Enter Master Username" required>
             </div>
             <div class="form-group" style="text-align: left;">
               <label for="masterPassword">Master Password</label>
@@ -1080,7 +1080,7 @@
           </div>
         </div>
 
-        <!-- 4. MASTER ADMIN DASHBOARD VIEW (Kenil Control Center) -->
+        <!-- 4. MASTER ADMIN DASHBOARD VIEW -->
         <div id="masterDashboardView" style="display: none;">
           <!-- Top Header & Actions -->
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
@@ -1105,6 +1105,9 @@
             </button>
             <button type="button" class="master-nav-tab" id="tabBtnReleases">
               📦 ActMaster Zip Releases
+            </button>
+            <button type="button" class="master-nav-tab" id="tabBtnEnv">
+              ⚙️ Environment Config
             </button>
           </div>
 
@@ -1238,6 +1241,47 @@
             </div>
           </div>
 
+          <!-- TAB 3: ENVIRONMENT CONFIGURATION (.env Management) -->
+          <div id="masterTabEnv" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+              <div>
+                <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--gray-900);">⚙️ Environment Configuration (<code>.env</code>)</h4>
+                <p style="font-size: 0.75rem; color: var(--gray-500); margin-top: 2px;">
+                  All usernames, passwords, cloud/CDN/API keys, and server ports live exclusively in <code>.env</code> (never pushed to GitHub). Changes apply immediately!
+                </p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.78rem;" id="btnRefreshEnv">
+                  🔄 Refresh
+                </button>
+                <button type="button" class="btn btn-success" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnSaveAllEnv">
+                  💾 Save All Changes
+                </button>
+              </div>
+            </div>
+
+            <!-- Add New Custom Credential / Key Form -->
+            <div style="background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
+              <div style="font-size: 0.78rem; font-weight: 700; color: #0369a1; margin-bottom: 8px;">
+                ➕ Add Any New API Key, CDN Key, Cloud Key, ID, Password, or Setting to <code>.env</code>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <input type="text" id="newEnvKeyInput" placeholder="KEY_NAME (e.g. CDN_SECRET)" style="flex: 1; min-width: 170px; padding: 7px 10px; border: 1.5px solid #7dd3fc; border-radius: 6px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; text-transform: uppercase;">
+                <input type="text" id="newEnvValInput" placeholder="Enter value..." style="flex: 1.5; min-width: 200px; padding: 7px 10px; border: 1.5px solid #7dd3fc; border-radius: 6px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace;">
+                <button type="button" class="btn btn-primary" style="width: auto; padding: 7px 14px; font-size: 0.78rem; background: #0284c7;" id="btnAddEnvKey">
+                  ➕ Add / Update
+                </button>
+              </div>
+            </div>
+
+            <div id="envConfigContainer" style="display: flex; flex-direction: column; gap: 10px; max-height: 410px; overflow-y: auto; padding-right: 4px;">
+              <div style="text-align: center; color: var(--gray-400); padding: 30px;">
+                <div class="spinner" style="border-top-color: #2563eb; margin: 0 auto 10px auto; width: 20px; height: 20px;"></div>
+                Loading environment configuration...
+              </div>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -1355,8 +1399,16 @@
     // Master Dashboard Tabs & Release Management Elements
     const tabBtnAdmins = document.getElementById('tabBtnAdmins');
     const tabBtnReleases = document.getElementById('tabBtnReleases');
+    const tabBtnEnv = document.getElementById('tabBtnEnv');
     const masterTabAdmins = document.getElementById('masterTabAdmins');
     const masterTabReleases = document.getElementById('masterTabReleases');
+    const masterTabEnv = document.getElementById('masterTabEnv');
+    const envConfigContainer = document.getElementById('envConfigContainer');
+    const btnRefreshEnv = document.getElementById('btnRefreshEnv');
+    const btnSaveAllEnv = document.getElementById('btnSaveAllEnv');
+    const newEnvKeyInput = document.getElementById('newEnvKeyInput');
+    const newEnvValInput = document.getElementById('newEnvValInput');
+    const btnAddEnvKey = document.getElementById('btnAddEnvKey');
     const btnOpenUploadRelease = document.getElementById('btnOpenUploadRelease');
     const releaseFormCard = document.getElementById('releaseFormCard');
     const btnCancelReleaseForm = document.getElementById('btnCancelReleaseForm');
@@ -1789,7 +1841,7 @@
 
     function showMasterLogin() {
       hideAllModalViews();
-      modalMainTitle.innerText = "👑 Master Admin Portal (Kenil Access)";
+      modalMainTitle.innerText = "👑 Master Admin Portal";
       masterLoginBox.style.display = 'block';
       masterUsername.value = '';
       masterPassword.value = '';
@@ -1804,10 +1856,12 @@
 
     function showMasterDashboard() {
       hideAllModalViews();
-      modalMainTitle.innerText = "👑 Master Admin Control Center (Kenil)";
+      modalMainTitle.innerText = "👑 Master Admin Control Center";
       masterDashboardView.style.display = 'block';
       if (tabBtnReleases && tabBtnReleases.classList.contains('active')) {
         switchMasterTab('releases');
+      } else if (tabBtnEnv && tabBtnEnv.classList.contains('active')) {
+        switchMasterTab('env');
       } else {
         switchMasterTab('admins');
       }
@@ -1999,7 +2053,7 @@
     };
 
     // =========================================================================
-    // MASTER ADMIN CONTROLLERS (Kenil / Canon)
+    // MASTER ADMIN CONTROLLERS
     // =========================================================================
     masterLoginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2019,7 +2073,7 @@
         adminToken = res.token; // Master can also view approvals
         localStorage.setItem('divider_master_token', masterToken);
         localStorage.setItem('divider_admin_token', adminToken);
-        showToast('Welcome, Master Admin (Kenil)!');
+        showToast('Welcome, Master Admin!');
         showMasterDashboard();
       } catch (err) {
         showToast(err.message, true);
@@ -2218,7 +2272,7 @@
           <div style="text-align: center; padding: 40px 20px; background: #f8fafc; border: 1.5px dashed var(--gray-300); border-radius: 12px;">
             <div style="font-size: 42px; margin-bottom: 8px;">📦</div>
             <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--gray-800); margin-bottom: 4px;">No Releases Available Yet</h4>
-            <p style="font-size: 0.8rem; color: var(--gray-500);">Kenil has not uploaded any software packages yet. Please check back later!</p>
+            <p style="font-size: 0.8rem; color: var(--gray-500);">Master Admin has not uploaded any software packages yet. Please check back later!</p>
           </div>`;
         return;
       }
@@ -2247,7 +2301,7 @@
             <div class="release-meta-row">
               <span>📅 Uploaded: <strong>${rel.created_at ? rel.created_at + ' IST' : 'Recently'}</strong></span>
               <span>•</span>
-              <span>👤 Released by: <strong>${escapeHtml(rel.uploaded_by || 'Kenil')}</strong></span>
+              <span>👤 Released by: <strong>${escapeHtml(rel.uploaded_by || 'Master Admin')}</strong></span>
               <span>•</span>
               <span>💾 Size: <strong>${rel.file_size_formatted}</strong></span>
             </div>
@@ -2263,15 +2317,31 @@
     }
 
     // Public Release Password Modal & Download Controller
-    window.handlePublicDownloadClick = function(relId, encTitle, encFname, hasPassword) {
+    window.handlePublicDownloadClick = async function(relId, encTitle, encFname, hasPassword) {
       const title = decodeURIComponent(encTitle);
       const fname = decodeURIComponent(encFname);
 
-      if (!hasPassword) {
-        window.location.href = `/api/releases/download/${relId}`;
+      if (hasPassword) {
+        openZipPasswordModal(relId, title, fname);
         return;
       }
 
+      // Check if release is locked before navigating to prevent raw 403 screen
+      try {
+        const chkResp = await fetch(`/api/releases/check-lock/${relId}`);
+        const chkData = await chkResp.json();
+        if (chkData && chkData.locked) {
+          openZipPasswordModal(relId, title, fname);
+          return;
+        }
+      } catch (err) {
+        // Fallback
+      }
+
+      window.location.href = `/api/releases/download/${relId}`;
+    };
+
+    function openZipPasswordModal(relId, title, fname) {
       currentDownloadRelId = relId;
       pwdModalReleaseTitle.innerText = title;
       pwdModalReleaseFilename.innerText = '📦 ' + fname;
@@ -2280,7 +2350,7 @@
       zipPwdErrorText.style.display = 'none';
       zipPasswordModal.classList.add('active');
       setTimeout(() => zipDownloadPasswordInput.focus(), 150);
-    };
+    }
 
     document.getElementById('btnCloseZipPasswordModal').addEventListener('click', () => {
       zipPasswordModal.classList.remove('active');
@@ -2342,26 +2412,35 @@
     });
 
     // =========================================================================
-    // MASTER ACTMASTER ZIP RELEASES CONTROLLER (Kenil Only)
+    // MASTER ACTMASTER ZIP RELEASES CONTROLLER
     // =========================================================================
     function switchMasterTab(tab) {
+      // Reset all tabs
+      tabBtnAdmins.classList.remove('active');
+      tabBtnReleases.classList.remove('active');
+      tabBtnEnv.classList.remove('active');
+      masterTabAdmins.style.display = 'none';
+      masterTabReleases.style.display = 'none';
+      masterTabEnv.style.display = 'none';
+
       if (tab === 'admins') {
         tabBtnAdmins.classList.add('active');
-        tabBtnReleases.classList.remove('active');
         masterTabAdmins.style.display = 'block';
-        masterTabReleases.style.display = 'none';
         loadMasterAdmins();
-      } else {
+      } else if (tab === 'releases') {
         tabBtnReleases.classList.add('active');
-        tabBtnAdmins.classList.remove('active');
         masterTabReleases.style.display = 'block';
-        masterTabAdmins.style.display = 'none';
         loadMasterReleases();
+      } else if (tab === 'env') {
+        tabBtnEnv.classList.add('active');
+        masterTabEnv.style.display = 'block';
+        loadEnvConfig();
       }
     }
 
     tabBtnAdmins.addEventListener('click', () => switchMasterTab('admins'));
     tabBtnReleases.addEventListener('click', () => switchMasterTab('releases'));
+    tabBtnEnv.addEventListener('click', () => switchMasterTab('env'));
 
     btnOpenUploadRelease.addEventListener('click', () => {
       releaseFormCard.style.display = 'block';
@@ -2495,9 +2574,9 @@
                 <button type="button" class="action-btn-sm" style="padding: 5px 10px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;" onclick="promptEditPassword('${rel.id}', '${encodeURIComponent(rel.download_password || '')}')">
                   🔑 ${hasPw ? 'Edit Password' : 'Set Password'}
                 </button>
-                <a href="/api/releases/download/${rel.id}?password=${encodeURIComponent(rel.download_password || '')}" class="action-btn-sm action-btn-dl" style="text-decoration: none; padding: 5px 10px;">
+                <button type="button" class="action-btn-sm action-btn-dl" style="padding: 5px 10px;" onclick="masterDownloadRelease('${rel.id}', '${encodeURIComponent(rel.download_password || '')}')">
                   📥 Download (${rel.file_size_formatted})
-                </a>
+                </button>
                 <button type="button" class="action-btn-sm action-btn-reject" style="padding: 5px 10px;" onclick="deleteRelease('${rel.id}', '${encodeURIComponent(rel.title || rel.filename)}')">
                   🗑️ Delete
                 </button>
@@ -2569,6 +2648,224 @@
         showToast('Error deleting release: ' + err.message, true);
       }
     };
+
+    window.masterDownloadRelease = function(relId, encPw) {
+      const pw = decodeURIComponent(encPw || '');
+      const url = `/api/releases/download/${relId}?master_token=${encodeURIComponent(masterToken || '')}&password=${encodeURIComponent(pw)}`;
+      window.location.href = url;
+    };
+
+    // =========================================================================
+    // ENVIRONMENT CONFIGURATION (.env) CONTROLLER
+    // =========================================================================
+    const ENV_LABELS = {
+      'MASTER_USERNAME': { label: 'Master Admin Username', icon: '👑', hint: 'Login ID for Master Admin portal', type: 'text' },
+      'MASTER_PASSWORD': { label: 'Master Admin Password', icon: '🔑', hint: 'Login password for Master Admin portal', type: 'password' },
+      'MASTER_DISPLAY_NAME': { label: 'Master Display Name', icon: '🏷️', hint: 'Public uploader name shown on releases', type: 'text' },
+      'ADMIN_USERNAME': { label: 'Admin Portal Username', icon: '🛡️', hint: 'Login ID for normal Admin Approvals Dashboard', type: 'text' },
+      'ADMIN_PASSWORD': { label: 'Admin Portal Password', icon: '🔒', hint: 'Login password for Admin Approvals Dashboard', type: 'password' },
+      'ADMIN_NAME': { label: 'Admin Display Name', icon: '👤', hint: 'Display label for primary Admin account', type: 'text' },
+      'GITHUB_TOKEN': { label: 'GitHub / Cloud API Token', icon: '🔐', hint: 'Token for GitHub Releases CDN & cloud persistence', type: 'password' },
+      'GITHUB_REPO': { label: 'GitHub Repository', icon: '📁', hint: 'Repository for releases & data sync (owner/repo)', type: 'text' },
+      'GITHUB_DATA_BRANCH': { label: 'Cloud Data Branch', icon: '🌿', hint: 'Git branch for cloud JSON sync (default: data-store)', type: 'text' },
+      'CDN_API_KEY': { label: 'CDN API Key', icon: '⚡', hint: 'Optional external CDN credential stored in .env', type: 'password' },
+      'CLOUD_API_KEY': { label: 'Cloud Key', icon: '☁️', hint: 'Optional cloud provider key stored in .env', type: 'password' },
+      'PORT': { label: 'Server Port', icon: '🌐', hint: 'Local port number the server listens on', type: 'text' },
+      'HOST': { label: 'Server Host', icon: '🖥️', hint: 'Host interface (0.0.0.0 for cloud, 127.0.0.1 for local)', type: 'text' }
+    };
+
+    let envCache = {};
+
+    async function loadEnvConfig() {
+      envConfigContainer.innerHTML = `
+        <div style="text-align: center; color: var(--gray-400); padding: 30px;">
+          <div class="spinner" style="border-top-color: #2563eb; margin: 0 auto 10px auto; width: 20px; height: 20px;"></div>
+          Loading environment configuration from .env...
+        </div>`;
+
+      try {
+        const resp = await fetch('/api/env', {
+          headers: { 'X-Master-Token': masterToken }
+        });
+        if (resp.status === 401) {
+          masterToken = null;
+          localStorage.removeItem('divider_master_token');
+          showMasterLogin();
+          return;
+        }
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error);
+        envCache = res.env || {};
+        renderEnvConfig(envCache);
+      } catch (err) {
+        envConfigContainer.innerHTML = `<div style="text-align: center; color: #ef4444; padding: 20px;">Failed to load: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderEnvConfig(env) {
+      let html = '';
+      const allKeys = Object.keys(env);
+      allKeys.forEach(key => {
+        const entry = env[key] || { value: '', masked: '', is_sensitive: false, is_required: false, is_standard: false };
+        const meta = ENV_LABELS[key] || {
+          label: key,
+          icon: '🔧',
+          hint: 'Custom environment variable stored in .env',
+          type: entry.is_sensitive ? 'password' : 'text'
+        };
+        const isSensitive = meta.type === 'password' || entry.is_sensitive;
+        html += `
+          <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px;">
+              <label style="font-size: 0.82rem; font-weight: 700; color: #1e293b;">
+                ${meta.icon} ${escapeHtml(meta.label)}
+              </label>
+              <code style="font-size: 0.68rem; color: #64748b; background: #e2e8f0; padding: 2px 7px; border-radius: 4px;">${escapeHtml(key)}</code>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <input type="${isSensitive ? 'password' : 'text'}" class="env-dynamic-input" data-env-key="${escapeHtml(key)}" id="env_${escapeHtml(key)}" value="${escapeHtml(entry.value || '')}"
+                placeholder="Enter ${escapeHtml(meta.label)}..."
+                style="flex: 1; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; background: #fff;">
+              ${isSensitive ? `
+                <button type="button" class="action-btn-sm" style="padding: 5px 8px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.75rem;"
+                  onclick="toggleEnvVisibility('env_${escapeHtml(key)}')">👁️</button>
+              ` : ''}
+              <button type="button" class="action-btn-sm action-btn-dl" style="padding: 5px 10px; font-size: 0.75rem;"
+                onclick="saveEnvKey('${escapeHtml(key)}')">💾 Save</button>
+              ${!entry.is_required ? `
+                <button type="button" class="action-btn-sm action-btn-reject" style="padding: 5px 8px; font-size: 0.75rem;"
+                  title="Remove key from .env" onclick="deleteEnvKeyUI('${escapeHtml(key)}')">🗑️</button>
+              ` : ''}
+            </div>
+            <span style="font-size: 0.7rem; color: #94a3b8; margin-top: 3px; display: block;">${escapeHtml(meta.hint)}</span>
+          </div>
+        `;
+      });
+      envConfigContainer.innerHTML = html;
+    }
+
+    window.toggleEnvVisibility = function(inputId) {
+      const inp = document.getElementById(inputId);
+      if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+    };
+
+    window.saveEnvKey = async function(key) {
+      const inp = document.getElementById('env_' + key);
+      if (!inp) return;
+      const val = inp.value.trim();
+
+      if ((key === 'MASTER_USERNAME' || key === 'MASTER_PASSWORD') && !val) {
+        showToast(`${key} cannot be empty!`, true);
+        return;
+      }
+
+      try {
+        const resp = await fetch('/api/env', {
+          method: 'POST',
+          headers: {
+            'X-Master-Token': masterToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ [key]: val })
+        });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error);
+        if (res.env) {
+          envCache = res.env;
+        }
+        showToast(`✅ ${key} saved to .env!`);
+
+        if (key === 'MASTER_USERNAME' || key === 'MASTER_PASSWORD' || key === 'ADMIN_USERNAME' || key === 'ADMIN_PASSWORD') {
+          showToast('🔐 Credentials updated in .env — active immediately for next login!');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, true);
+      }
+    };
+
+    window.deleteEnvKeyUI = async function(key) {
+      if (!confirm(`Remove '${key}' from .env?`)) return;
+      try {
+        const resp = await fetch(`/api/env/${encodeURIComponent(key)}`, {
+          method: 'DELETE',
+          headers: { 'X-Master-Token': masterToken }
+        });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error);
+        envCache = res.env || {};
+        renderEnvConfig(envCache);
+        showToast(`Removed ${key} from .env`);
+      } catch (err) {
+        showToast('Error: ' + err.message, true);
+      }
+    };
+
+    btnAddEnvKey.addEventListener('click', async () => {
+      const k = (newEnvKeyInput.value || '').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+      const v = (newEnvValInput.value || '').trim();
+      if (!k || !/^[A-Z][A-Z0-9_]*$/.test(k)) {
+        showToast('Enter a valid uppercase KEY name (e.g. CDN_API_KEY)!', true);
+        return;
+      }
+
+      try {
+        const resp = await fetch('/api/env', {
+          method: 'POST',
+          headers: {
+            'X-Master-Token': masterToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ [k]: v })
+        });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error);
+        newEnvKeyInput.value = '';
+        newEnvValInput.value = '';
+        envCache = res.env || {};
+        renderEnvConfig(envCache);
+        showToast(`✅ Saved '${k}' directly to .env!`);
+      } catch (err) {
+        showToast('Error: ' + err.message, true);
+      }
+    });
+
+    btnRefreshEnv.addEventListener('click', () => loadEnvConfig());
+
+    btnSaveAllEnv.addEventListener('click', async () => {
+      const updates = {};
+      const inputs = envConfigContainer.querySelectorAll('.env-dynamic-input');
+      inputs.forEach(inp => {
+        const key = inp.getAttribute('data-env-key');
+        if (!key) return;
+        const val = inp.value.trim();
+        if ((key === 'MASTER_USERNAME' || key === 'MASTER_PASSWORD') && !val) return;
+        updates[key] = val;
+      });
+
+      if (Object.keys(updates).length === 0) {
+        showToast('No changes to save.', true);
+        return;
+      }
+
+      try {
+        const resp = await fetch('/api/env', {
+          method: 'POST',
+          headers: {
+            'X-Master-Token': masterToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updates)
+        });
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.error);
+        if (res.env) {
+          envCache = res.env;
+        }
+        showToast(`✅ Saved ${res.updated_keys.length} key(s) directly to .env!`);
+      } catch (err) {
+        showToast('Error: ' + err.message, true);
+      }
+    });
 
     function escapeHtml(text) {
       if (!text) return '';

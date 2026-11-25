@@ -33,10 +33,6 @@ REQUESTS_FILE = DATA_DIR / "requests.json"
 CONFIG_FILE = DATA_DIR / "admin_config.json"
 RELEASES_FILE = DATA_DIR / "releases.json"
 
-# Master Admin Credentials (Kenil / Canon)
-MASTER_USERNAMES = ["kenil", "canon", "shahkenil01"]
-MASTER_PASSWORDS = ["kenil", "canon"]
-
 # Active session tokens {token: {"type": "admin"|"master", "user": "...", "expires": timestamp}}
 ACTIVE_SESSIONS = {}
 
@@ -87,49 +83,177 @@ def verify_download_token(release_id: str, token: str) -> bool:
     return True
 
 # GitHub Cloud Persistence Settings
-def _resolve_github_token() -> str:
-    # 1. Environment variable (Render / Production)
-    tok = os.environ.get("GITHUB_TOKEN")
-    if tok and tok.strip():
-        return tok.strip()
-    # 2. Local gitignored config files
-    for candidate in [DATA_DIR / ".github_token", BASE_DIR / ".github_token"]:
-        if candidate.exists():
-            try:
-                t = candidate.read_text(encoding="utf-8").strip()
-                if t:
-                    return t
-            except Exception:
-                pass
-    # 3. Built-in cloud persistence token (XOR decoded to bypass secret scanning push blocks)
+def _find_env_file() -> Path:
+    """Locates the .env file. Searches project root first, then common locations."""
+    candidates = [
+        BASE_DIR / ".env",
+        Path.cwd() / ".env",
+        Path.cwd() / "Log_Timestamp_Divider" / ".env"
+    ]
+    for ep in candidates:
+        if ep.exists() and ep.is_file():
+            return ep
+    # Default: create in project root
+    return BASE_DIR / ".env"
+
+
+def read_env_file() -> dict:
+    """
+    Reads all key=value pairs from .env file.
+    This is the SINGLE SOURCE OF TRUTH for all credentials and configuration.
+    Every login attempt, API call, or config read calls this function fresh,
+    so edits to .env take effect immediately without server restart.
+    """
+    env_path = _find_env_file()
+    result = {}
+    if not env_path.exists():
+        return result
     try:
-        _k = [77, 66, 90, 117, 98, 75, 68, 72, 24, 31, 92, 83, 73, 123, 102, 100, 71, 26, 76, 92, 82, 101, 102, 80, 94, 31, 98, 98, 121, 127, 31, 68, 65, 102, 26, 25, 19, 27, 108, 115]
-        return "".join(chr(x ^ 42) for x in _k)
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip("'\"")
+                    result[k] = v
     except Exception:
-        return ""
+        pass
+    return result
 
-GITHUB_TOKEN = _resolve_github_token()
-GITHUB_REPO = os.environ.get("GITHUB_REPO") or "shahkenil01/Log-Timestamp-Divider"
-GITHUB_DATA_BRANCH = "data-store"
 
-GITHUB_HEADERS = {
-    "Authorization": f"Bearer {GITHUB_TOKEN}",
-    "Accept": "application/vnd.github.v3+json",
-    "User-Agent": "Log-Timestamp-Divider-Server"
-}
+def write_env_file(updates: dict) -> bool:
+    """
+    Updates specific keys in the .env file while preserving comments and structure.
+    Creates .env if it does not exist yet, and updates os.environ immediately so
+    changes take effect in the running server with zero restart needed.
+    """
+    env_path = _find_env_file()
+    lines = []
+    existing_keys = set()
+
+    if env_path.exists():
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+        except Exception:
+            pass
+
+    clean_updates = {str(k).strip().upper(): str(v).strip() for k, v in updates.items() if str(k).strip()}
+
+    new_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            key = stripped.split("=", 1)[0].strip().upper()
+            if key in clean_updates:
+                new_lines.append(f"{key}={clean_updates[key]}\n")
+                existing_keys.add(key)
+                continue
+        new_lines.append(line)
+
+    # Append any new keys that weren't already in the file
+    for key, val in clean_updates.items():
+        if key not in existing_keys:
+            new_lines.append(f"{key}={val}\n")
+
+    try:
+        with open(env_path, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+        # Sync to running process environment immediately
+        for key, val in clean_updates.items():
+            os.environ[key] = val
+        return True
+    except Exception:
+        return False
+
+
+def delete_env_key(key: str) -> bool:
+    """Removes a key from the .env file and running process environment."""
+    clean_key = str(key or "").strip().upper()
+    if not clean_key:
+        return False
+    env_path = _find_env_file()
+    if env_path.exists():
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            new_lines = []
+            for line in lines:
+                stripped = line.strip()
+                if stripped and not stripped.startswith("#") and "=" in stripped:
+                    k = stripped.split("=", 1)[0].strip().upper()
+                    if k == clean_key:
+                        continue
+                new_lines.append(line)
+            with open(env_path, "w", encoding="utf-8") as f:
+                f.writelines(new_lines)
+        except Exception:
+            return False
+    os.environ.pop(clean_key, None)
+    return True
+
+
+def get_env_value(key: str, default: str = "") -> str:
+    """
+    Gets a value from .env file FIRST (so live UI/.env edits apply immediately),
+    with OS environment fallback (for cloud hosts like Render).
+    """
+    env_data = read_env_file()
+    if key in env_data and env_data[key] != "":
+        return env_data[key]
+    os_val = os.environ.get(key, "").strip()
+    if os_val:
+        return os_val
+    return default
+
+
+def get_github_token() -> str:
+    """Dynamically resolves GitHub/Cloud API token from .env or OS environment only."""
+    tok = get_env_value("GITHUB_TOKEN", "").strip()
+    if tok and not tok.startswith("your_"):
+        return tok
+    return ""
+
+
+def get_github_repo() -> str:
+    """Dynamically resolves GitHub repo from .env or OS environment."""
+    repo = get_env_value("GITHUB_REPO", "").strip()
+    if repo and repo != "owner/repository" and not repo.startswith("your_"):
+        return repo
+    return ""
+
+
+def get_github_data_branch() -> str:
+    """Dynamically resolves GitHub cloud sync branch from .env or OS environment."""
+    return get_env_value("GITHUB_DATA_BRANCH", "data-store").strip() or "data-store"
+
+
+def get_github_headers() -> dict:
+    """Builds authorization headers dynamically using current .env token."""
+    return {
+        "Authorization": f"Bearer {get_github_token()}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "Log-Timestamp-Divider-Server"
+    }
 
 
 # =============================================================================
-# GITHUB CLOUD PERSISTENCE ENGINE (Branch: data-store)
+# GITHUB CLOUD PERSISTENCE ENGINE
 # =============================================================================
 
 def github_pull_cloud_file(remote_filename):
-    """Fetches a JSON file from the GitHub data-store branch."""
-    if not GITHUB_TOKEN or not requests:
+    """Fetches a JSON file from the configured GitHub cloud branch."""
+    token = get_github_token()
+    repo = get_github_repo()
+    branch = get_github_data_branch()
+    if not token or not repo or not requests:
         return None
     try:
-        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{remote_filename}?ref={GITHUB_DATA_BRANCH}"
-        resp = requests.get(url, headers=GITHUB_HEADERS, timeout=8)
+        url = f"https://api.github.com/repos/{repo}/contents/{remote_filename}?ref={branch}"
+        resp = requests.get(url, headers=get_github_headers(), timeout=8)
         if resp.status_code == 200:
             b64_content = resp.json().get("content", "")
             if b64_content:
@@ -141,13 +265,16 @@ def github_pull_cloud_file(remote_filename):
 
 
 def github_push_cloud_file(remote_filename, data_obj, commit_msg="Cloud Sync update"):
-    """Pushes a JSON object to the GitHub data-store branch without triggering Render rebuilds."""
-    if not GITHUB_TOKEN or not requests:
+    """Pushes a JSON object to the configured GitHub cloud branch without triggering rebuilds."""
+    token = get_github_token()
+    repo = get_github_repo()
+    branch = get_github_data_branch()
+    if not token or not repo or not requests:
         return False
     try:
-        # Get existing file SHA if present
-        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{remote_filename}?ref={GITHUB_DATA_BRANCH}"
-        get_r = requests.get(url, headers=GITHUB_HEADERS, timeout=8)
+        headers = get_github_headers()
+        url = f"https://api.github.com/repos/{repo}/contents/{remote_filename}?ref={branch}"
+        get_r = requests.get(url, headers=headers, timeout=8)
         sha = get_r.json().get("sha") if get_r.status_code == 200 else None
 
         content_str = json.dumps(data_obj, indent=2, ensure_ascii=False)
@@ -156,13 +283,13 @@ def github_push_cloud_file(remote_filename, data_obj, commit_msg="Cloud Sync upd
         payload = {
             "message": commit_msg,
             "content": content_b64,
-            "branch": GITHUB_DATA_BRANCH
+            "branch": branch
         }
         if sha:
             payload["sha"] = sha
 
-        put_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{remote_filename}"
-        put_r = requests.put(put_url, headers=GITHUB_HEADERS, json=payload, timeout=12)
+        put_url = f"https://api.github.com/repos/{repo}/contents/{remote_filename}"
+        put_r = requests.put(put_url, headers=headers, json=payload, timeout=12)
         if put_r.status_code in (200, 201):
             return True
         else:
@@ -233,7 +360,7 @@ def init_storage():
             with open(RELEASES_FILE, "w", encoding="utf-8") as f:
                 json.dump([], f, indent=2)
 
-    # 4. Initialize default Admin config if missing
+    # 4. Initialize empty Admin config if missing (zero hardcoded passwords!)
     should_write_config = False
     config_data = {}
     if CONFIG_FILE.exists():
@@ -243,29 +370,18 @@ def init_storage():
         except Exception:
             config_data = {}
 
-    if "admins" not in config_data or not isinstance(config_data.get("admins"), list) or len(config_data.get("admins")) == 0:
-        config_data["admins"] = [
-            {
-                "id": "adm_default",
-                "username": "automationpaglu",
-                "password": "automationpaglu",
-                "name": "Automation Paglu (Admin)",
-                "created_at": get_current_ist_str()
-            }
-        ]
+    if "admins" not in config_data or not isinstance(config_data.get("admins"), list):
+        config_data["admins"] = []
         should_write_config = True
 
-    if "master" not in config_data:
-        config_data["master"] = {
-            "usernames": MASTER_USERNAMES,
-            "passwords": MASTER_PASSWORDS
-        }
+    # Never keep master credentials inside admin_config.json (.env only)
+    if "master" in config_data:
+        config_data.pop("master", None)
         should_write_config = True
 
     if should_write_config:
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(config_data, f, indent=2, ensure_ascii=False)
-        async_cloud_push("admin_config.json", config_data, "Init default admin config")
 
     if not RELEASES_FILE.exists():
         with open(RELEASES_FILE, "w", encoding="utf-8") as f:
@@ -294,30 +410,59 @@ def get_config():
     init_storage()
     try:
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            if isinstance(data, dict):
+                data.pop("master", None)
+                return data
     except Exception:
-        return {"admins": [], "master": {"usernames": MASTER_USERNAMES, "passwords": MASTER_PASSWORDS}}
+        pass
+    return {"admins": []}
 
 
 def save_config(cfg):
     init_storage()
+    clean_cfg = dict(cfg) if isinstance(cfg, dict) else {"admins": []}
+    clean_cfg.pop("master", None)
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        json.dump(cfg, f, indent=2, ensure_ascii=False)
-    async_cloud_push("admin_config.json", cfg, "Update admin config")
+        json.dump(clean_cfg, f, indent=2, ensure_ascii=False)
+    async_cloud_push("admin_config.json", clean_cfg, "Update admin config")
 
 
 # =============================================================================
-# AUTHENTICATION
+# AUTHENTICATION (.env EXCLUSIVE SOURCE OF TRUTH)
 # =============================================================================
+
+def get_admin_credentials() -> tuple[str, str, str]:
+    """
+    Reads primary Admin Portal credentials EXCLUSIVELY from .env / environment.
+    Changes in .env take effect immediately without server restart.
+    """
+    username = get_env_value("ADMIN_USERNAME", "").strip()
+    password = get_env_value("ADMIN_PASSWORD", "").strip()
+    display_name = get_env_value("ADMIN_NAME", "Shift Admin").strip() or "Shift Admin"
+    return username, password, display_name
+
 
 def verify_admin_login(username, password):
     init_storage()
     u_clean = str(username or "").strip().lower()
     p_clean = str(password or "").strip()
 
+    # 1. Check primary Admin credentials from .env
+    env_u, env_p, env_name = get_admin_credentials()
+    if env_u and env_p and u_clean == env_u.lower() and p_clean == env_p:
+        token = secrets.token_hex(24)
+        ACTIVE_SESSIONS[token] = {
+            "type": "admin",
+            "username": env_u,
+            "name": env_name,
+            "expires": time.time() + (7 * 86400)
+        }
+        return True, token, {"username": env_u, "name": env_name}
+
+    # 2. Check optional additional sub-admins managed via Master Portal
     cfg = get_config()
     admins = cfg.get("admins", [])
-
     for adm in admins:
         if adm.get("username", "").strip().lower() == u_clean and adm.get("password", "") == p_clean:
             token = secrets.token_hex(24)
@@ -329,23 +474,42 @@ def verify_admin_login(username, password):
             }
             return True, token, adm
 
+    # 3. Allow Master Admin login into Admin Dashboard too
     is_master, m_token = verify_master_login(username, password)
     if is_master:
-        return True, m_token, {"username": "Master Admin (Kenil)", "name": "Super Admin"}
+        master_name = get_env_value("MASTER_USERNAME", "Master Admin")
+        master_disp = get_env_value("MASTER_DISPLAY_NAME", "Super Admin")
+        return True, m_token, {"username": master_name, "name": master_disp}
 
     return False, None, None
 
 
+def get_master_credentials() -> tuple[str, str]:
+    """
+    Reads Master Admin credentials EXCLUSIVELY from .env / environment.
+    Zero hardcoded credentials anywhere in codebase!
+    Changes in .env take effect instantly on next login — no restart needed.
+    """
+    username = get_env_value("MASTER_USERNAME", "").strip()
+    password = get_env_value("MASTER_PASSWORD", "").strip()
+    return username, password
+
+
 def verify_master_login(username, password):
     u_clean = str(username or "").strip().lower()
-    p_clean = str(password or "").strip().lower()
+    p_clean = str(password or "").strip()
 
-    if u_clean in MASTER_USERNAMES and p_clean in MASTER_PASSWORDS:
+    master_u, master_p = get_master_credentials()
+
+    if not master_u or not master_p:
+        return False, None
+
+    if u_clean == master_u.lower() and p_clean == master_p:
         token = secrets.token_hex(24)
         ACTIVE_SESSIONS[token] = {
             "type": "master",
-            "username": "kenil",
-            "name": "Master Admin (Kenil)",
+            "username": u_clean,
+            "name": get_env_value("MASTER_DISPLAY_NAME", "Master Admin"),
             "expires": time.time() + (7 * 86400)
         }
         return True, token
@@ -616,13 +780,16 @@ def list_all_releases(public_view: bool = False):
     cached = load_local_releases_cache()
     pw_map = {str(r.get("id")): str(r.get("download_password") or "").strip() for r in cached if r.get("download_password")}
 
-    if GITHUB_TOKEN and requests:
+    token = get_github_token()
+    repo = get_github_repo()
+    if token and repo and requests:
         try:
-            url = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
-            resp = requests.get(url, headers=GITHUB_HEADERS, timeout=8)
+            url = f"https://api.github.com/repos/{repo}/releases"
+            resp = requests.get(url, headers=get_github_headers(), timeout=8)
             if resp.status_code == 200:
                 gh_releases = resp.json()
                 parsed = []
+                default_uploader = get_env_value("MASTER_DISPLAY_NAME", "Master Admin")
                 for gr in gh_releases:
                     assets = gr.get("assets", [])
                     fn = assets[0].get("name") if assets else "ActMaster.zip"
@@ -656,7 +823,7 @@ def list_all_releases(public_view: bool = False):
                         "description": clean_desc,
                         "file_size": sz,
                         "file_size_formatted": format_size(sz),
-                        "uploaded_by": "Master Admin (Kenil)",
+                        "uploaded_by": default_uploader,
                         "created_at": created_ist,
                         "download_url": dl_url,
                         "asset_id": asset_id,
@@ -686,12 +853,14 @@ def list_all_releases(public_view: bool = False):
     return cached
 
 
-def save_release_file(original_filename, file_bytes, title="", description="", download_password="", uploaded_by="Master Admin (Kenil)"):
+def save_release_file(original_filename, file_bytes, title="", description="", download_password="", uploaded_by=None):
     """
     Uploads the software zip file to GitHub Releases permanently with security password.
     Never gets wiped by Render redeployments!
     """
     init_storage()
+    if not uploaded_by:
+        uploaded_by = get_env_value("MASTER_DISPLAY_NAME", "Master Admin")
     clean_orig = Path(original_filename or "ActMaster_Release.zip").name.strip()
     clean_orig = "".join(c for c in clean_orig if c.isalnum() or c in "._- ")
     if not clean_orig:
@@ -702,11 +871,13 @@ def save_release_file(original_filename, file_bytes, title="", description="", d
     clean_pw = (download_password or "").strip()
     now_ist = get_current_ist_str()
 
-    # If GitHub token is configured, publish directly to GitHub Releases
-    if GITHUB_TOKEN and requests:
+    # If GitHub token & repo are configured, publish directly to GitHub Releases
+    token = get_github_token()
+    repo = get_github_repo()
+    if token and repo and requests:
         try:
             tag_name = "v" + get_current_ist_str("%Y%m%d-%H%M%S")
-            create_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
+            create_url = f"https://api.github.com/repos/{repo}/releases"
 
             body_with_meta = rel_desc
             if clean_pw:
@@ -719,7 +890,7 @@ def save_release_file(original_filename, file_bytes, title="", description="", d
                 "draft": False,
                 "prerelease": False
             }
-            create_resp = requests.post(create_url, headers=GITHUB_HEADERS, json=create_payload, timeout=15)
+            create_resp = requests.post(create_url, headers=get_github_headers(), json=create_payload, timeout=15)
             if create_resp.status_code == 201:
                 rel_json = create_resp.json()
                 rel_id = str(rel_json["id"])
@@ -730,7 +901,7 @@ def save_release_file(original_filename, file_bytes, title="", description="", d
 
                 # Upload binary asset
                 asset_headers = {
-                    "Authorization": f"Bearer {GITHUB_TOKEN}",
+                    "Authorization": f"Bearer {token}",
                     "Content-Type": "application/octet-stream",
                     "User-Agent": "Log-Timestamp-Divider-Server"
                 }
@@ -835,16 +1006,19 @@ def update_release_password(rel_id: str, new_password: str) -> bool:
     async_cloud_push("releases.json", cur, f"Update password for release {rel_id}")
 
     # Also update GitHub release body if possible
-    if GITHUB_TOKEN and requests and str(rel_id).isdigit():
+    token = get_github_token()
+    repo = get_github_repo()
+    if token and repo and requests and str(rel_id).isdigit():
         try:
-            rel_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/{rel_id}"
-            get_r = requests.get(rel_url, headers=GITHUB_HEADERS, timeout=8)
+            headers = get_github_headers()
+            rel_url = f"https://api.github.com/repos/{repo}/releases/{rel_id}"
+            get_r = requests.get(rel_url, headers=headers, timeout=8)
             if get_r.status_code == 200:
                 body = get_r.json().get("body") or ""
                 clean_body = re.sub(r"<!--\s*meta:\s*(\{.*?\})\s*-->", "", body, flags=re.DOTALL).strip()
                 if clean_pw:
                     clean_body += f"\n\n<!-- meta: {json.dumps({'password': clean_pw})} -->"
-                requests.patch(rel_url, headers=GITHUB_HEADERS, json={"body": clean_body}, timeout=10)
+                requests.patch(rel_url, headers=headers, json={"body": clean_body}, timeout=10)
         except Exception as exc:
             print(f"[Releases] Error updating release body on GitHub: {exc}")
 
@@ -881,13 +1055,16 @@ def delete_release_file(rel_id):
         raise ValueError("Release not found.")
 
     # Delete from GitHub Releases
-    if GITHUB_TOKEN and requests and str(rel_id).isdigit():
+    token = get_github_token()
+    repo = get_github_repo()
+    if token and repo and requests and str(rel_id).isdigit():
         try:
-            del_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/{rel_id}"
-            requests.delete(del_url, headers=GITHUB_HEADERS, timeout=10)
+            headers = get_github_headers()
+            del_url = f"https://api.github.com/repos/{repo}/releases/{rel_id}"
+            requests.delete(del_url, headers=headers, timeout=10)
             tag_name = rel.get("tag_name")
             if tag_name:
-                requests.delete(f"https://api.github.com/repos/{GITHUB_REPO}/git/refs/tags/{tag_name}", headers=GITHUB_HEADERS, timeout=10)
+                requests.delete(f"https://api.github.com/repos/{repo}/git/refs/tags/{tag_name}", headers=headers, timeout=10)
         except Exception as exc:
             print(f"[Releases] GitHub delete exception: {exc}")
 

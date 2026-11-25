@@ -6,10 +6,11 @@ Features:
 2. User / Team Member approval submission with Requester Name.
 3. Locked download (users CANNOT download until Admin approves).
 4. Protected Admin Dashboard with Date-wise filter & live status management.
-5. Master Admin Portal (Kenil) to Add, Edit, and Delete Admin accounts.
+5. Master Admin Portal to manage Admin accounts, Releases, and .env configuration.
 """
 
 import os
+import re
 import sys
 import json
 import base64
@@ -17,7 +18,7 @@ import argparse
 import webbrowser
 import threading
 from pathlib import Path
-from fastapi import FastAPI, File, UploadFile, Form, Header, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -52,7 +53,11 @@ from storage import (
     verify_download_token,
     get_release_by_id,
     get_release_file_path,
-    delete_release_file
+    delete_release_file,
+    read_env_file,
+    write_env_file,
+    delete_env_key,
+    get_env_value
 )
 
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -332,12 +337,12 @@ async def admin_direct_download(request_id: str, token: str = None, authorizatio
 
 
 # =============================================================================
-# MASTER ADMIN API (Kenil)
+# MASTER ADMIN API
 # =============================================================================
 
 @app.post("/api/master/login")
 async def master_login(username: str = Form(...), password: str = Form(...)):
-    """Verifies Master Admin (Kenil) credentials."""
+    """Verifies Master Admin credentials from .env."""
     ok, token = verify_master_login(username.strip(), password.strip())
     if not ok:
         return JSONResponse({"success": False, "error": "Invalid Master Username or Password."}, status_code=401)
@@ -452,7 +457,7 @@ async def verify_release_password(
     if password.strip() != expected_pw:
         return JSONResponse({
             "success": False, 
-            "error": "Incorrect security password! Please contact Admin (Kenil) for the download password."
+            "error": "Incorrect security password! Please contact Master Admin for the download password."
         }, status_code=403)
     
     # Generate single-use secure download token (valid for 15 mins)
@@ -463,11 +468,30 @@ async def verify_release_password(
     })
 
 
+@app.get("/api/releases/check-lock/{release_id}")
+async def check_release_lock(release_id: str):
+    """Checks whether a release package is password-protected before attempting download."""
+    rel = get_release_by_id(release_id)
+    if not rel:
+        return JSONResponse({"success": False, "error": "Release not found"}, status_code=404)
+    expected_pw = str(rel.get("download_password") or "").strip()
+    return JSONResponse({
+        "success": True,
+        "release_id": release_id,
+        "locked": bool(expected_pw),
+        "title": rel.get("title") or rel.get("filename"),
+        "filename": rel.get("filename")
+    })
+
+
 @app.get("/api/releases/download/{release_id}")
 async def download_release_file(
     release_id: str,
     dl_token: str = None,
-    password: str = None
+    password: str = None,
+    master_token: str = None,
+    authorization: str = Header(None),
+    x_master_token: str = Header(None)
 ):
     """Public endpoint to download an ActMaster zip release package with security password verification."""
     rel = get_release_by_id(release_id)
@@ -477,7 +501,10 @@ async def download_release_file(
     expected_pw = str(rel.get("download_password") or "").strip()
     if expected_pw:
         authorized = False
-        if dl_token and verify_download_token(release_id, dl_token):
+        m_tok = master_token or x_master_token or authorization
+        if m_tok and is_valid_master_token(m_tok):
+            authorized = True
+        elif dl_token and verify_download_token(release_id, dl_token):
             authorized = True
         elif password and password.strip() == expected_pw:
             authorized = True
@@ -529,7 +556,7 @@ async def master_upload_release(
             title=title,
             description=description,
             download_password=download_password,
-            uploaded_by="Master Admin (Kenil)"
+            uploaded_by=get_env_value("MASTER_DISPLAY_NAME", "Master Admin")
         )
         return JSONResponse({"success": True, "release": rel_meta})
     except Exception as exc:
@@ -581,24 +608,247 @@ def open_browser_delayed(url, delay=1.2):
     t.start()
 
 
+# =============================================================================
+# ENVIRONMENT CONFIGURATION API (.env Management — Master Admin Only)
+# =============================================================================
+
+# Core credential & configuration keys tracked in UI + any custom keys in .env
+ENV_STANDARD_KEYS = [
+    "MASTER_USERNAME", "MASTER_PASSWORD", "MASTER_DISPLAY_NAME",
+    "ADMIN_USERNAME", "ADMIN_PASSWORD", "ADMIN_NAME",
+    "GITHUB_TOKEN", "GITHUB_REPO", "GITHUB_DATA_BRANCH",
+    "CDN_API_KEY", "CLOUD_API_KEY",
+    "PORT", "HOST"
+]
+
+# Critical keys that cannot be empty or deleted (prevents accidental lockout)
+ENV_REQUIRED_KEYS = {"MASTER_USERNAME", "MASTER_PASSWORD"}
+ENV_KEY_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
+
+
+def _is_sensitive_key(key: str) -> bool:
+    u = key.upper()
+    return any(tok in u for tok in ("PASSWORD", "TOKEN", "SECRET", "KEY", "AUTH"))
+
+
+def _build_env_response() -> dict:
+    """Merges keys from .env file with OS environment values for standard keys."""
+    env_data = read_env_file()
+    ordered_keys = list(ENV_STANDARD_KEYS)
+    for k in env_data.keys():
+        uk = k.strip().upper()
+        if uk and uk not in ordered_keys:
+            ordered_keys.append(uk)
+
+    result = {}
+    for key in ordered_keys:
+        val = env_data.get(key)
+        if val is None or val == "":
+            val = os.environ.get(key, "").strip()
+        is_sens = _is_sensitive_key(key)
+        if is_sens and val and len(val) > 4:
+            masked = "●" * (len(val) - 4) + val[-4:]
+        elif is_sens and val:
+            masked = "●" * len(val)
+        else:
+            masked = val
+        result[key] = {
+            "value": val,
+            "masked": masked,
+            "is_sensitive": is_sens,
+            "is_standard": key in ENV_STANDARD_KEYS,
+            "is_required": key in ENV_REQUIRED_KEYS
+        }
+    return result
+
+
+@app.get("/api/env")
+@app.get("/api/master/env")
+async def master_get_env(
+    authorization: str = Header(None),
+    x_master_token: str = Header(None)
+):
+    """Fetches all environment credentials and settings directly from .env (Master Admin only)."""
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+
+    return JSONResponse({"success": True, "env": _build_env_response()})
+
+
+@app.post("/api/env")
+async def post_env_values(
+    request: Request,
+    authorization: str = Header(None),
+    x_master_token: str = Header(None)
+):
+    """
+    Simple unified API to post data directly to .env file.
+    Accepts JSON dict ({"KEY": "VALUE", ...} or {"key": "KEY", "value": "VAL"})
+    or form-urlencoded / multipart form fields.
+    """
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+
+    updates_raw = {}
+    ctype = (request.headers.get("content-type") or "").lower()
+    if "application/json" in ctype:
+        try:
+            body = await request.json()
+            if isinstance(body, dict):
+                if "key" in body and "value" in body and len(body) <= 2:
+                    updates_raw[str(body["key"])] = str(body["value"])
+                else:
+                    updates_raw = body
+        except Exception:
+            return JSONResponse({"success": False, "error": "Invalid JSON payload."}, status_code=400)
+    else:
+        form = await request.form()
+        if "request_body" in form:
+            try:
+                updates_raw = json.loads(str(form["request_body"]))
+            except Exception:
+                return JSONResponse({"success": False, "error": "Invalid JSON in request_body."}, status_code=400)
+        elif "key" in form:
+            updates_raw[str(form["key"])] = str(form.get("value", ""))
+        else:
+            updates_raw = dict(form)
+
+    filtered = {}
+    for k, v in updates_raw.items():
+        clean_key = str(k or "").strip().upper()
+        if not ENV_KEY_PATTERN.match(clean_key):
+            return JSONResponse({"success": False, "error": f"Invalid key format '{clean_key}'. Use UPPERCASE letters, numbers, and underscores."}, status_code=400)
+        clean_val = str(v if v is not None else "").strip()
+        if clean_key in ENV_REQUIRED_KEYS and not clean_val:
+            return JSONResponse({"success": False, "error": f"{clean_key} cannot be empty."}, status_code=400)
+        filtered[clean_key] = clean_val
+
+    if not filtered:
+        return JSONResponse({"success": False, "error": "No valid environment keys provided."}, status_code=400)
+
+    if not write_env_file(filtered):
+        return JSONResponse({"success": False, "error": "Failed to write to .env file."}, status_code=500)
+
+    return JSONResponse({
+        "success": True,
+        "updated_keys": list(filtered.keys()),
+        "env": _build_env_response(),
+        "message": f"Saved {len(filtered)} key(s) directly to .env!"
+    })
+
+
+@app.post("/api/master/env/update")
+async def master_update_env(
+    key: str = Form(...),
+    value: str = Form(""),
+    authorization: str = Header(None),
+    x_master_token: str = Header(None)
+):
+    """Updates or adds a single key directly in .env file (Master Admin only)."""
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+
+    clean_key = key.strip().upper()
+    if not ENV_KEY_PATTERN.match(clean_key):
+        return JSONResponse({"success": False, "error": f"Invalid key format '{clean_key}'. Use UPPERCASE letters, digits, and '_'."}, status_code=400)
+
+    clean_val = value.strip()
+    if clean_key in ENV_REQUIRED_KEYS and not clean_val:
+        return JSONResponse({"success": False, "error": f"{clean_key} cannot be empty."}, status_code=400)
+
+    ok = write_env_file({clean_key: clean_val})
+    if not ok:
+        return JSONResponse({"success": False, "error": "Failed to write to .env file."}, status_code=500)
+
+    return JSONResponse({"success": True, "key": clean_key, "env": _build_env_response(), "message": f"{clean_key} saved to .env!"})
+
+
+@app.post("/api/master/env/bulk-update")
+async def master_bulk_update_env(
+    request_body: str = Form(...),
+    authorization: str = Header(None),
+    x_master_token: str = Header(None)
+):
+    """Updates multiple keys at once directly in .env file (Master Admin only)."""
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+
+    try:
+        updates = json.loads(request_body)
+    except Exception:
+        return JSONResponse({"success": False, "error": "Invalid JSON data."}, status_code=400)
+
+    filtered = {}
+    for k, v in updates.items():
+        clean_key = str(k or "").strip().upper()
+        if not ENV_KEY_PATTERN.match(clean_key):
+            continue
+        clean_val = str(v if v is not None else "").strip()
+        if clean_key in ENV_REQUIRED_KEYS and not clean_val:
+            continue
+        filtered[clean_key] = clean_val
+
+    if not filtered:
+        return JSONResponse({"success": False, "error": "No valid keys to update."}, status_code=400)
+
+    ok = write_env_file(filtered)
+    if not ok:
+        return JSONResponse({"success": False, "error": "Failed to write to .env file."}, status_code=500)
+
+    return JSONResponse({"success": True, "updated_keys": list(filtered.keys()), "env": _build_env_response(), "message": f"Saved {len(filtered)} key(s) to .env!"})
+
+
+@app.delete("/api/env/{key}")
+@app.post("/api/master/env/delete")
+async def master_delete_env(
+    key: str = None,
+    request: Request = None,
+    authorization: str = Header(None),
+    x_master_token: str = Header(None)
+):
+    """Deletes a custom environment key from .env (Master Admin only)."""
+    token = x_master_token or authorization
+    if not is_valid_master_token(token):
+        return JSONResponse({"success": False, "error": "Unauthorized. Master Admin access required."}, status_code=401)
+
+    if not key and request is not None:
+        form = await request.form()
+        key = str(form.get("key", ""))
+
+    clean_key = str(key or "").strip().upper()
+    if clean_key in ENV_REQUIRED_KEYS:
+        return JSONResponse({"success": False, "error": f"Cannot delete required login key '{clean_key}'."}, status_code=400)
+    if not ENV_KEY_PATTERN.match(clean_key):
+        return JSONResponse({"success": False, "error": "Invalid key name."}, status_code=400)
+
+    delete_env_key(clean_key)
+    return JSONResponse({"success": True, "deleted_key": clean_key, "env": _build_env_response(), "message": f"Removed {clean_key} from .env."})
+
+
 if __name__ == "__main__":
+    default_port = int(get_env_value("PORT", "8000") or 8000)
+    default_host = get_env_value("HOST", "127.0.0.1") or "127.0.0.1"
+
     parser = argparse.ArgumentParser(description="Log Timestamp Divider Web Server with Admin Approval")
-    parser.add_argument("--port", type=int, default=8899, help="Port to listen on (default: 8899)")
-    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host interface (default: 127.0.0.1)")
+    parser.add_argument("--port", type=int, default=default_port, help="Port to listen on (from .env PORT)")
+    parser.add_argument("--host", type=str, default=default_host, help="Host interface (from .env HOST)")
     parser.add_argument("--no-browser", action="store_true", help="Do not auto-open browser")
     args = parser.parse_args()
 
-    env_port = os.environ.get("PORT")
-    is_cloud = env_port is not None
-    port = int(env_port) if is_cloud else args.port
+    cloud_env_port = os.environ.get("PORT")
+    is_cloud = cloud_env_port is not None
+    port = int(cloud_env_port) if is_cloud else args.port
     host = "0.0.0.0" if is_cloud else args.host
 
     url = f"http://{host}:{port}/"
     print(f"\n========================================================")
     print(f"  Log Timestamp Divider with Multi-Admin & Master Control")
     print(f"  Running at: {url} (Cloud Mode: {is_cloud})")
-    print(f"  Default Admin: automationpaglu / automationpaglu")
-    print(f"  Master Access: kenil / kenil")
+    print(f"  Credentials & API Keys: Loaded securely from .env")
     print(f"========================================================\n")
 
     if not args.no_browser and not is_cloud:
