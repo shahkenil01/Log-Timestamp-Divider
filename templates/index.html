@@ -462,6 +462,53 @@
 
     .btn-group { display: grid; grid-template-columns: 1fr 1.6fr; gap: 12px; margin-top: 16px; }
 
+    /* Upload Progress Bar */
+    .upload-progress-container {
+      margin-top: 10px;
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 10px 14px;
+      border: 1px solid #cbd5e1;
+      display: none;
+      animation: fadeIn 0.2s ease;
+    }
+    .upload-progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.775rem;
+      font-weight: 600;
+      color: var(--gray-800);
+      margin-bottom: 6px;
+    }
+    .upload-progress-percent {
+      color: #2563eb;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+    .progress-bar-track {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #2563eb 0%, #10b981 100%);
+      width: 0%;
+      border-radius: 9999px;
+      transition: width 0.15s ease;
+    }
+    .progress-bytes-label {
+      font-size: 0.7rem;
+      color: var(--gray-500);
+      margin-top: 4px;
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
     /* Approval Card */
     .approval-card {
       border-radius: 10px; padding: 14px 16px; margin-top: 16px; border: 1px solid; display: none; animation: fadeIn 0.3s ease;
@@ -696,6 +743,18 @@
                 <span id="btnSubmitSpinner" class="spinner" style="display: none;"></span>
                 <span id="btnSubmitText">📩 Request Admin Approval</span>
               </button>
+            </div>
+
+            <!-- Approval Request Upload Progress -->
+            <div id="approvalProgressContainer" class="upload-progress-container">
+              <div class="upload-progress-header">
+                <span id="approvalProgressStatus">Uploading Excel log...</span>
+                <span id="approvalProgressPercent" class="upload-progress-percent">0%</span>
+              </div>
+              <div class="progress-bar-track">
+                <div id="approvalProgressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+              </div>
+              <div id="approvalProgressBytes" class="progress-bytes-label">0 KB / 0 KB</div>
             </div>
 
             <!-- Live Approval Status Card -->
@@ -1080,6 +1139,18 @@
                   <textarea id="formReleaseDesc" rows="3" placeholder="Provide notes for your team: fixed bugs, new features, or setup instructions..."></textarea>
                 </div>
 
+                <!-- Release Upload Progress Bar -->
+                <div id="releaseProgressContainer" class="upload-progress-container">
+                  <div class="upload-progress-header">
+                    <span id="releaseProgressStatus">Uploading release file...</span>
+                    <span id="releaseProgressPercent" class="upload-progress-percent">0%</span>
+                  </div>
+                  <div class="progress-bar-track">
+                    <div id="releaseProgressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+                  </div>
+                  <div id="releaseProgressBytes" class="progress-bytes-label">0 MB / 0 MB</div>
+                </div>
+
                 <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px;">
                   <button type="button" class="btn btn-secondary" style="width: auto; padding: 6px 14px; font-size: 0.78rem;" id="btnCancelReleaseForm">
                     Cancel
@@ -1230,6 +1301,60 @@
     const releaseUploadSpinner = document.getElementById('releaseUploadSpinner');
     const releaseUploadBtnText = document.getElementById('releaseUploadBtnText');
     const masterReleasesList = document.getElementById('masterReleasesList');
+
+    // Upload Progress Elements
+    const approvalProgressContainer = document.getElementById('approvalProgressContainer');
+    const approvalProgressStatus = document.getElementById('approvalProgressStatus');
+    const approvalProgressPercent = document.getElementById('approvalProgressPercent');
+    const approvalProgressBarFill = document.getElementById('approvalProgressBarFill');
+    const approvalProgressBytes = document.getElementById('approvalProgressBytes');
+
+    const releaseProgressContainer = document.getElementById('releaseProgressContainer');
+    const releaseProgressStatus = document.getElementById('releaseProgressStatus');
+    const releaseProgressPercent = document.getElementById('releaseProgressPercent');
+    const releaseProgressBarFill = document.getElementById('releaseProgressBarFill');
+    const releaseProgressBytes = document.getElementById('releaseProgressBytes');
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes <= 0) return '0 B';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+    }
+
+    function uploadFormDataWithProgress(url, formData, headers, onProgress) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url, true);
+        if (headers) {
+          for (const [k, v] of Object.entries(headers)) {
+            xhr.setRequestHeader(k, v);
+          }
+        }
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable && e.total > 0) {
+            const percent = Math.min(100, Math.round((e.loaded / e.total) * 100));
+            onProgress(percent, e.loaded, e.total);
+          }
+        };
+        xhr.onload = () => {
+          try {
+            const res = JSON.parse(xhr.responseText);
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve(res);
+            } else {
+              reject(new Error(res.error || `HTTP ${xhr.status}`));
+            }
+          } catch (err) {
+            reject(new Error(`Failed to parse response (Status ${xhr.status})`));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Network error during upload. Please check connection.'));
+        xhr.ontimeout = () => reject(new Error('Upload request timed out.'));
+        xhr.send(formData);
+      });
+    }
 
     // Default target date
     const todayStr = new Date().toISOString().split('T')[0];
@@ -1433,8 +1558,13 @@
       }
 
       btnSubmitApproval.disabled = true;
-      btnSubmitSpinner.style.display = 'inline-block';
-      btnSubmitText.innerText = 'Submitting Request...';
+      btnSubmitSpinner.style.display = 'none';
+      btnSubmitText.innerText = 'Uploading: 0%';
+      approvalProgressContainer.style.display = 'block';
+      approvalProgressPercent.innerText = '0%';
+      approvalProgressBarFill.style.width = '0%';
+      approvalProgressStatus.innerText = 'Uploading Excel log...';
+      approvalProgressBytes.innerText = `0 KB / ${formatBytes(currentFile.size)}`;
 
       const formData = new FormData();
       formData.append('file', currentFile);
@@ -1452,8 +1582,16 @@
       formData.append('apply_theme', 'false');
 
       try {
-        const resp = await fetch('/api/request-approval', { method: 'POST', body: formData });
-        const res = await resp.json();
+        const res = await uploadFormDataWithProgress('/api/request-approval', formData, {}, (pct, loaded, total) => {
+          approvalProgressPercent.innerText = pct + '%';
+          approvalProgressBarFill.style.width = pct + '%';
+          approvalProgressBytes.innerText = `${formatBytes(loaded)} / ${formatBytes(total)}`;
+          btnSubmitText.innerText = `Uploading: ${pct}%`;
+          if (pct === 100) {
+            approvalProgressStatus.innerText = 'Dividing timestamps across your shift...';
+            btnSubmitText.innerText = 'Processing (100%)...';
+          }
+        });
         if (!res.success) throw new Error(res.error || 'Failed to submit approval request');
 
         const req = res.request;
@@ -1464,8 +1602,8 @@
       } catch (err) {
         showToast('Error: ' + err.message, true);
       } finally {
+        setTimeout(() => { approvalProgressContainer.style.display = 'none'; }, 2000);
         btnSubmitApproval.disabled = false;
-        btnSubmitSpinner.style.display = 'none';
         btnSubmitText.innerText = '📩 Request Admin Approval';
       }
     });
@@ -2107,16 +2245,30 @@
       formData.append('description', desc);
 
       btnSubmitRelease.disabled = true;
-      releaseUploadSpinner.style.display = 'inline-block';
-      releaseUploadBtnText.innerText = 'Uploading...';
+      releaseUploadSpinner.style.display = 'none';
+      releaseUploadBtnText.innerText = 'Uploading: 0%';
+      releaseProgressContainer.style.display = 'block';
+      releaseProgressPercent.innerText = '0%';
+      releaseProgressBarFill.style.width = '0%';
+      releaseProgressStatus.innerText = 'Uploading release file to server...';
+      releaseProgressBytes.innerText = `0 MB / ${formatBytes(file.size)}`;
 
       try {
-        const resp = await fetch('/api/master/releases/upload', {
-          method: 'POST',
-          headers: { 'X-Master-Token': masterToken },
-          body: formData
-        });
-        const res = await resp.json();
+        const res = await uploadFormDataWithProgress(
+          '/api/master/releases/upload',
+          formData,
+          { 'X-Master-Token': masterToken },
+          (pct, loaded, total) => {
+            releaseProgressPercent.innerText = pct + '%';
+            releaseProgressBarFill.style.width = pct + '%';
+            releaseProgressBytes.innerText = `${formatBytes(loaded)} / ${formatBytes(total)}`;
+            releaseUploadBtnText.innerText = `Uploading: ${pct}%`;
+            if (pct === 100) {
+              releaseProgressStatus.innerText = 'Verifying and saving release on server...';
+              releaseUploadBtnText.innerText = 'Saving (100%)...';
+            }
+          }
+        );
         if (!res.success) throw new Error(res.error || 'Upload failed');
 
         showToast('Release uploaded and published successfully!');
@@ -2128,8 +2280,8 @@
       } catch (err) {
         showToast('Upload error: ' + err.message, true);
       } finally {
+        setTimeout(() => { releaseProgressContainer.style.display = 'none'; }, 2000);
         btnSubmitRelease.disabled = false;
-        releaseUploadSpinner.style.display = 'none';
         releaseUploadBtnText.innerText = 'Upload & Publish';
       }
     });
