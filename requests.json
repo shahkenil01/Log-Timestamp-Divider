@@ -17,8 +17,8 @@
     "avg_minutes_per_log": 0.19,
     "first_timestamp": "2026-11-27 09:11:00",
     "last_timestamp": "2026-11-27 20:01:44",
-    "status": "PENDING",
-    "approved_at": null,
+    "status": "APPROVED",
+    "approved_at": "2026-11-27 17:48:10",
     "rejection_reason": null,
     "preview_comparisons": [
       {
