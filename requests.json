@@ -1,39 +1,5 @@
 [
   {
-    "id": "REQ-20261128-29C130",
-    "created_at": "2026-11-28 11:29:24",
-    "user_name": "__E2E_TEST__",
-    "filename": "e2e_test.xlsx",
-    "target_date": "2026-11-28",
-    "shift_start": "09:30",
-    "shift_end": "18:30",
-    "lunch_start": "13:00",
-    "lunch_end": "14:00",
-    "break2_enabled": false,
-    "break2_start": null,
-    "break2_end": null,
-    "num_rows": 2,
-    "working_hours": 8.0,
-    "avg_minutes_per_log": 240.0,
-    "first_timestamp": "2026-11-28 09:41:00",
-    "last_timestamp": "2026-11-28 17:57:10",
-    "status": "APPROVED",
-    "approved_at": "2026-11-28 11:29:29",
-    "rejection_reason": null,
-    "preview_comparisons": [
-      {
-        "row_num": 2,
-        "original": "2026-11-28 10:00:00",
-        "new": "2026-11-28 09:41:00"
-      },
-      {
-        "row_num": 3,
-        "original": "2026-11-28 10:05:00",
-        "new": "2026-11-28 17:57:10"
-      }
-    ]
-  },
-  {
     "id": "REQ-20261127-4A9983",
     "created_at": "2026-11-27 18:46:03",
     "user_name": "Niral",
