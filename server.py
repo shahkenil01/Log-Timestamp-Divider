@@ -281,11 +281,11 @@ async def admin_get_requests(
     authorization: str = Header(None),
     x_admin_token: str = Header(None)
 ):
-    """Returns requests for Admin inspection, with optional date filtering."""
+    """Returns requests for Admin inspection, syncing with GitHub cloud first."""
     token = x_admin_token or authorization
     if not is_valid_admin_token(token):
         return JSONResponse({"success": False, "error": "Unauthorized. Please login as Admin."}, status_code=401)
-    reqs = load_all_requests(date_filter=date)
+    reqs = load_all_requests(date_filter=date, sync_cloud=True)
     return JSONResponse({"success": True, "requests": reqs})
 
 

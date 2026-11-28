@@ -1488,8 +1488,8 @@
       });
     }
 
-    // Default target date
-    const todayStr = new Date().toISOString().split('T')[0];
+    // Default target date (IST / Asia-Kolkata YYYY-MM-DD)
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
     targetDateInput.value = todayStr;
 
     // Drag and Drop

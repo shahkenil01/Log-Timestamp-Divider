@@ -12,6 +12,8 @@ Guarantees:
 
 import os
 import sys
+import hmac
+import hashlib
 import json
 import time
 import secrets
@@ -22,8 +24,12 @@ import re
 from pathlib import Path
 try:
     import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
 except ImportError:
     requests = None
+    HTTPAdapter = None
+    Retry = None
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -33,11 +39,34 @@ REQUESTS_FILE = DATA_DIR / "requests.json"
 CONFIG_FILE = DATA_DIR / "admin_config.json"
 RELEASES_FILE = DATA_DIR / "releases.json"
 
-# Active session tokens {token: {"type": "admin"|"master", "user": "...", "expires": timestamp}}
+# Active session cache + thread synchronization locks
 ACTIVE_SESSIONS = {}
-
-# Active temporary download tokens {token: {"rel_id": release_id, "expires": timestamp}}
 DOWNLOAD_TOKENS = {}
+
+_STORAGE_LOCK = threading.RLock()
+_CLOUD_PUSH_LOCK = threading.Lock()
+_CLOUD_INIT_DONE = False
+_LAST_REQ_SYNC_TS = 0.0
+_HTTP_SESSION = None
+
+
+def _get_http_session():
+    """Returns a reusable HTTP session with automatic retry on transient network/SSL errors."""
+    global _HTTP_SESSION
+    if not requests:
+        return None
+    if _HTTP_SESSION is None:
+        sess = requests.Session()
+        if Retry and HTTPAdapter:
+            retry_cfg = Retry(
+                total=3,
+                backoff_factor=0.35,
+                status_forcelist=[429, 500, 502, 503, 504],
+                allowed_methods=["GET", "PUT", "POST", "PATCH", "DELETE"]
+            )
+            sess.mount("https://", HTTPAdapter(max_retries=retry_cfg))
+        _HTTP_SESSION = sess
+    return _HTTP_SESSION
 
 # Indian Standard Time (IST / UTC+05:30)
 IST_TIMEZONE = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
@@ -248,66 +277,104 @@ def get_github_headers() -> dict:
 
 
 # =============================================================================
-# GITHUB CLOUD PERSISTENCE ENGINE
+# GITHUB CLOUD PERSISTENCE ENGINE (LOCKED & RETRY-SAFE)
 # =============================================================================
 
-def github_pull_cloud_file(remote_filename):
-    """Fetches a JSON file from the configured GitHub cloud branch."""
+def github_pull_raw_bytes(remote_path: str):
+    """Fetches raw file bytes from the configured GitHub cloud branch."""
     token = get_github_token()
     repo = get_github_repo()
     branch = get_github_data_branch()
-    if not token or not repo or not requests:
+    sess = _get_http_session()
+    if not token or not repo or not sess:
         return None
     try:
-        url = f"https://api.github.com/repos/{repo}/contents/{remote_filename}?ref={branch}"
-        resp = requests.get(url, headers=get_github_headers(), timeout=8)
+        url = f"https://api.github.com/repos/{repo}/contents/{remote_path}?ref={branch}"
+        resp = sess.get(url, headers=get_github_headers(), timeout=12)
         if resp.status_code == 200:
-            b64_content = resp.json().get("content", "")
+            data = resp.json()
+            b64_content = data.get("content", "")
             if b64_content:
-                raw_json = base64.b64decode(b64_content).decode("utf-8")
-                return json.loads(raw_json)
+                return base64.b64decode(b64_content)
+            # Files >1MB don't include inline content; fetch via git blob API
+            file_sha = data.get("sha")
+            if file_sha:
+                blob_r = sess.get(
+                    f"https://api.github.com/repos/{repo}/git/blobs/{file_sha}",
+                    headers=get_github_headers(),
+                    timeout=15
+                )
+                if blob_r.status_code == 200:
+                    b64_blob = blob_r.json().get("content", "")
+                    if b64_blob:
+                        return base64.b64decode(b64_blob)
     except Exception as exc:
-        print(f"[CloudSync] Pull error for {remote_filename}: {exc}")
+        print(f"[CloudSync] Pull error for {remote_path}: {exc}")
     return None
+
+
+def github_pull_cloud_file(remote_filename):
+    """Fetches a JSON file from the configured GitHub cloud branch."""
+    raw = github_pull_raw_bytes(remote_filename)
+    if raw is None:
+        return None
+    try:
+        return json.loads(raw.decode("utf-8"))
+    except Exception as exc:
+        print(f"[CloudSync] JSON decode error for {remote_filename}: {exc}")
+        return None
+
+
+def github_push_raw_bytes(remote_path: str, raw_bytes: bytes, commit_msg: str = "Cloud Sync update") -> bool:
+    """Pushes raw bytes safely to GitHub cloud branch with lock + 409 conflict retry."""
+    token = get_github_token()
+    repo = get_github_repo()
+    branch = get_github_data_branch()
+    sess = _get_http_session()
+    if not token or not repo or not sess:
+        return False
+
+    content_b64 = base64.b64encode(raw_bytes).decode("utf-8")
+    with _CLOUD_PUSH_LOCK:
+        headers = get_github_headers()
+        get_url = f"https://api.github.com/repos/{repo}/contents/{remote_path}?ref={branch}"
+        put_url = f"https://api.github.com/repos/{repo}/contents/{remote_path}"
+
+        for attempt in range(4):
+            try:
+                get_r = sess.get(get_url, headers=headers, timeout=10)
+                sha = get_r.json().get("sha") if get_r.status_code == 200 else None
+
+                payload = {
+                    "message": commit_msg,
+                    "content": content_b64,
+                    "branch": branch
+                }
+                if sha:
+                    payload["sha"] = sha
+
+                put_r = sess.put(put_url, headers=headers, json=payload, timeout=15)
+                if put_r.status_code in (200, 201):
+                    return True
+                if put_r.status_code in (409, 422):
+                    time.sleep(0.4 * (attempt + 1))
+                    continue
+                print(f"[CloudSync] Push error for {remote_path}: {put_r.status_code} - {put_r.text[:300]}")
+                return False
+            except Exception as exc:
+                print(f"[CloudSync] Push exception for {remote_path} (try {attempt+1}): {exc}")
+                time.sleep(0.4 * (attempt + 1))
+    return False
 
 
 def github_push_cloud_file(remote_filename, data_obj, commit_msg="Cloud Sync update"):
     """Pushes a JSON object to the configured GitHub cloud branch without triggering rebuilds."""
-    token = get_github_token()
-    repo = get_github_repo()
-    branch = get_github_data_branch()
-    if not token or not repo or not requests:
-        return False
-    try:
-        headers = get_github_headers()
-        url = f"https://api.github.com/repos/{repo}/contents/{remote_filename}?ref={branch}"
-        get_r = requests.get(url, headers=headers, timeout=8)
-        sha = get_r.json().get("sha") if get_r.status_code == 200 else None
-
-        content_str = json.dumps(data_obj, indent=2, ensure_ascii=False)
-        content_b64 = base64.b64encode(content_str.encode("utf-8")).decode("utf-8")
-
-        payload = {
-            "message": commit_msg,
-            "content": content_b64,
-            "branch": branch
-        }
-        if sha:
-            payload["sha"] = sha
-
-        put_url = f"https://api.github.com/repos/{repo}/contents/{remote_filename}"
-        put_r = requests.put(put_url, headers=headers, json=payload, timeout=12)
-        if put_r.status_code in (200, 201):
-            return True
-        else:
-            print(f"[CloudSync] Push error for {remote_filename}: {put_r.status_code} - {put_r.text}")
-    except Exception as exc:
-        print(f"[CloudSync] Push exception for {remote_filename}: {exc}")
-    return False
+    content_str = json.dumps(data_obj, indent=2, ensure_ascii=False)
+    return github_push_raw_bytes(remote_filename, content_str.encode("utf-8"), commit_msg)
 
 
 def async_cloud_push(remote_filename, data_obj, commit_msg="Cloud sync"):
-    """Runs cloud push in a background daemon thread so API responses return immediately."""
+    """Runs cloud JSON push in a background daemon thread using shared cloud lock."""
     t = threading.Thread(
         target=github_push_cloud_file,
         args=(remote_filename, data_obj, commit_msg),
@@ -316,12 +383,96 @@ def async_cloud_push(remote_filename, data_obj, commit_msg="Cloud sync"):
     t.start()
 
 
+def async_cloud_push_bytes(remote_path: str, raw_bytes: bytes, commit_msg: str = "Cloud file sync"):
+    """Runs cloud binary push (e.g., approved Excel backup) in background using shared lock."""
+    t = threading.Thread(
+        target=github_push_raw_bytes,
+        args=(remote_path, raw_bytes, commit_msg),
+        daemon=True
+    )
+    t.start()
+
+
 # =============================================================================
-# STORAGE INITIALIZATION
+# LOSSLESS MERGE HELPERS & STORAGE INITIALIZATION
 # =============================================================================
 
+_STATUS_PRIORITY = {"PENDING": 1, "REJECTED": 2, "APPROVED": 3}
+
+
+def _merge_requests_lists(local_list: list, cloud_list: list) -> list:
+    """
+    Combines two request lists by request ID without ever dropping historical entries.
+    Resolves status conflicts cleanly (APPROVED/REJECTED overrides PENDING).
+    """
+    by_id = {}
+    for src in (cloud_list or [], local_list or []):
+        if not isinstance(src, list):
+            continue
+        for item in src:
+            if not isinstance(item, dict):
+                continue
+            rid = str(item.get("id") or "").strip()
+            if not rid or rid == "REQ-INIT":
+                continue
+            prev = by_id.get(rid)
+            if not prev:
+                by_id[rid] = dict(item)
+                continue
+
+            prev_pri = _STATUS_PRIORITY.get(str(prev.get("status") or ""), 0)
+            curr_pri = _STATUS_PRIORITY.get(str(item.get("status") or ""), 0)
+            if curr_pri > prev_pri:
+                by_id[rid] = dict(item)
+            elif curr_pri == prev_pri:
+                # Prefer whichever has more timestamps / approved_at populated
+                prev_ts = str(prev.get("approved_at") or prev.get("created_at") or "")
+                curr_ts = str(item.get("approved_at") or item.get("created_at") or "")
+                if curr_ts >= prev_ts:
+                    by_id[rid] = dict(item)
+
+    merged = list(by_id.values())
+    merged.sort(key=lambda r: (str(r.get("created_at") or ""), str(r.get("id") or "")), reverse=True)
+    return merged
+
+
+def _read_local_json_list(path: Path) -> list:
+    if not path.exists():
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
+def _sync_requests_from_cloud(force: bool = False) -> list:
+    """Pulls cloud requests.json and merges into local storage without data loss."""
+    global _LAST_REQ_SYNC_TS
+    with _STORAGE_LOCK:
+        local_reqs = _read_local_json_list(REQUESTS_FILE)
+        now = time.time()
+        if not force and _LAST_REQ_SYNC_TS > 0 and (now - _LAST_REQ_SYNC_TS) < 20.0:
+            return local_reqs
+
+        cloud_reqs = github_pull_cloud_file("requests.json")
+        if isinstance(cloud_reqs, list):
+            merged = _merge_requests_lists(local_reqs, cloud_reqs)
+            if merged != local_reqs or not REQUESTS_FILE.exists():
+                with open(REQUESTS_FILE, "w", encoding="utf-8") as f:
+                    json.dump(merged, f, indent=2, ensure_ascii=False)
+            _LAST_REQ_SYNC_TS = time.time()
+            return merged
+        elif not REQUESTS_FILE.exists():
+            with open(REQUESTS_FILE, "w", encoding="utf-8") as f:
+                json.dump([], f, indent=2)
+        return local_reqs
+
+
 def init_storage():
-    """Ensure data directories and request store exist, and sync from GitHub cloud."""
+    """Ensure data directories exist and ALWAYS sync cloud history on startup regardless of file size."""
+    global _CLOUD_INIT_DONE
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     FILES_DIR.mkdir(parents=True, exist_ok=True)
     RELEASES_DIR.mkdir(parents=True, exist_ok=True)
@@ -334,72 +485,57 @@ def init_storage():
         except Exception:
             pass
 
-    # 1. Sync Requests from GitHub Cloud
-    need_local_requests = not REQUESTS_FILE.exists() or REQUESTS_FILE.stat().st_size <= 4
-    if need_local_requests:
-        cloud_reqs = github_pull_cloud_file("requests.json")
-        if cloud_reqs and isinstance(cloud_reqs, list) and len(cloud_reqs) > 0:
-            with open(REQUESTS_FILE, "w", encoding="utf-8") as f:
-                json.dump(cloud_reqs, f, indent=2, ensure_ascii=False)
-            print(f"[Storage] Loaded {len(cloud_reqs)} historical requests from GitHub Cloud!")
-        elif not REQUESTS_FILE.exists():
-            with open(REQUESTS_FILE, "w", encoding="utf-8") as f:
-                json.dump([], f, indent=2)
+    if not _CLOUD_INIT_DONE:
+        with _STORAGE_LOCK:
+            if not _CLOUD_INIT_DONE:
+                # Mark first to avoid recursive loops during initial sync
+                _CLOUD_INIT_DONE = True
 
-    # 2. Sync Admin Config from GitHub Cloud
-    need_local_config = not CONFIG_FILE.exists() or CONFIG_FILE.stat().st_size <= 4
-    if need_local_config:
-        cloud_cfg = github_pull_cloud_file("admin_config.json")
-        if cloud_cfg and isinstance(cloud_cfg, dict) and "admins" in cloud_cfg:
-            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-                json.dump(cloud_cfg, f, indent=2, ensure_ascii=False)
-            print("[Storage] Loaded Admin accounts configuration from GitHub Cloud!")
+                # 1. Always merge Requests from GitHub Cloud on boot (even if requests.json already exists in Git)
+                merged_reqs = _sync_requests_from_cloud(force=True)
+                if merged_reqs:
+                    print(f"[Storage] Synced {len(merged_reqs)} historical requests from GitHub Cloud!")
 
-    # 3. Sync Releases Metadata from GitHub Cloud
-    need_local_releases = not RELEASES_FILE.exists() or RELEASES_FILE.stat().st_size <= 4
-    if need_local_releases:
-        cloud_rels = github_pull_cloud_file("releases.json")
-        if cloud_rels and isinstance(cloud_rels, list) and len(cloud_rels) > 0:
-            with open(RELEASES_FILE, "w", encoding="utf-8") as f:
-                json.dump(cloud_rels, f, indent=2, ensure_ascii=False)
-            print(f"[Storage] Loaded {len(cloud_rels)} releases metadata from GitHub Cloud!")
-        elif not RELEASES_FILE.exists():
-            with open(RELEASES_FILE, "w", encoding="utf-8") as f:
-                json.dump([], f, indent=2)
+                # 2. Always merge Admin Config from GitHub Cloud on boot
+                local_cfg = {}
+                if CONFIG_FILE.exists():
+                    try:
+                        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                            local_cfg = json.load(f) or {}
+                    except Exception:
+                        local_cfg = {}
+                local_admins = local_cfg.get("admins", []) if isinstance(local_cfg.get("admins"), list) else []
 
-    # 4. Initialize empty Admin config if missing (zero hardcoded passwords!)
-    should_write_config = False
-    config_data = {}
-    if CONFIG_FILE.exists():
-        try:
-            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                config_data = json.load(f)
-        except Exception:
-            config_data = {}
+                cloud_cfg = github_pull_cloud_file("admin_config.json")
+                if isinstance(cloud_cfg, dict) and isinstance(cloud_cfg.get("admins"), list):
+                    adm_map = {a.get("id"): a for a in cloud_cfg["admins"] if isinstance(a, dict) and a.get("id")}
+                    for a in local_admins:
+                        if isinstance(a, dict) and a.get("id"):
+                            adm_map[a["id"]] = a
+                    local_admins = list(adm_map.values())
+                    print(f"[Storage] Synced {len(local_admins)} admin config account(s) from GitHub Cloud!")
 
-    if "admins" not in config_data or not isinstance(config_data.get("admins"), list):
-        config_data["admins"] = []
-        should_write_config = True
+                clean_cfg = {"admins": local_admins}
+                with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                    json.dump(clean_cfg, f, indent=2, ensure_ascii=False)
 
-    # Never keep master credentials inside admin_config.json (.env only)
-    if "master" in config_data:
-        config_data.pop("master", None)
-        should_write_config = True
+                # 3. Sync Releases Metadata from GitHub Cloud if local cache empty
+                if not RELEASES_FILE.exists() or RELEASES_FILE.stat().st_size <= 4:
+                    cloud_rels = github_pull_cloud_file("releases.json")
+                    if cloud_rels and isinstance(cloud_rels, list):
+                        with open(RELEASES_FILE, "w", encoding="utf-8") as f:
+                            json.dump(cloud_rels, f, indent=2, ensure_ascii=False)
+                        print(f"[Storage] Loaded {len(cloud_rels)} releases metadata from GitHub Cloud!")
+                    elif not RELEASES_FILE.exists():
+                        with open(RELEASES_FILE, "w", encoding="utf-8") as f:
+                            json.dump([], f, indent=2)
 
-    if should_write_config:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(config_data, f, indent=2, ensure_ascii=False)
-
-    if not RELEASES_FILE.exists():
-        with open(RELEASES_FILE, "w", encoding="utf-8") as f:
-            json.dump([], f, indent=2)
-
-    # Auto clean files older than 24h
-    cleanup_old_files()
+                # Auto clean local Excel cache older than 7 days (cloud keeps full archive)
+                cleanup_old_files(max_age_hours=168)
 
 
-def cleanup_old_files(max_age_hours=24):
-    """Deletes temporary generated Excel files older than 24 hours to keep disk usage near 0 MB."""
+def cleanup_old_files(max_age_hours=168):
+    """Deletes temporary local Excel cache files older than 7 days (cloud backup remains intact)."""
     try:
         now = time.time()
         for f in FILES_DIR.glob("*.xlsx"):
@@ -415,29 +551,89 @@ def cleanup_old_files(max_age_hours=24):
 
 def get_config():
     init_storage()
-    try:
-        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            if isinstance(data, dict):
-                data.pop("master", None)
-                return data
-    except Exception:
-        pass
+    with _STORAGE_LOCK:
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    data.pop("master", None)
+                    return data
+        except Exception:
+            pass
     return {"admins": []}
 
 
 def save_config(cfg):
     init_storage()
-    clean_cfg = dict(cfg) if isinstance(cfg, dict) else {"admins": []}
-    clean_cfg.pop("master", None)
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        json.dump(clean_cfg, f, indent=2, ensure_ascii=False)
-    async_cloud_push("admin_config.json", clean_cfg, "Update admin config")
+    with _STORAGE_LOCK:
+        clean_cfg = dict(cfg) if isinstance(cfg, dict) else {"admins": []}
+        clean_cfg.pop("master", None)
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(clean_cfg, f, indent=2, ensure_ascii=False)
+        github_push_cloud_file("admin_config.json", clean_cfg, "Update admin config")
 
 
 # =============================================================================
-# AUTHENTICATION (.env EXCLUSIVE SOURCE OF TRUTH)
+# AUTHENTICATION (.env EXCLUSIVE + STATELESS HMAC SESSIONS)
 # =============================================================================
+
+def _get_session_hmac_key() -> bytes:
+    """Derives session signing key dynamically from .env credentials so restarts keep sessions valid."""
+    seed = "|".join([
+        get_env_value("SESSION_SECRET", ""),
+        get_env_value("MASTER_USERNAME", ""),
+        get_env_value("MASTER_PASSWORD", ""),
+        get_env_value("ADMIN_USERNAME", ""),
+        get_env_value("ADMIN_PASSWORD", ""),
+    ])
+    return hashlib.sha256(seed.encode("utf-8")).digest()
+
+
+def _issue_session_token(sess_type: str, username: str, name: str, ttl_days: int = 7) -> str:
+    expires = int(time.time() + (ttl_days * 86400))
+    payload_obj = {
+        "t": sess_type,
+        "u": str(username or ""),
+        "n": str(name or ""),
+        "exp": expires,
+        "j": secrets.token_hex(6)
+    }
+    payload_b64 = base64.urlsafe_b64encode(json.dumps(payload_obj, separators=(",", ":")).encode("utf-8")).decode("utf-8")
+    sig = hmac.new(_get_session_hmac_key(), payload_b64.encode("utf-8"), hashlib.sha256).hexdigest()
+    token = f"{payload_b64}.{sig}"
+    ACTIVE_SESSIONS[token] = {"type": sess_type, "username": username, "name": name, "expires": expires}
+    return token
+
+
+def _verify_session_token(token: str, required_type: str = None) -> bool:
+    if not token:
+        return False
+    clean = token.replace("Bearer ", "").strip()
+
+    # Check signed stateless HMAC token first (survives Render container restarts)
+    if "." in clean:
+        try:
+            payload_b64, sig = clean.split(".", 1)
+            expected_sig = hmac.new(_get_session_hmac_key(), payload_b64.encode("utf-8"), hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(sig, expected_sig):
+                return False
+            payload = json.loads(base64.urlsafe_b64decode(payload_b64.encode("utf-8")).decode("utf-8"))
+            if payload.get("exp", 0) <= time.time():
+                return False
+            if required_type and payload.get("t") != required_type:
+                return False
+            return True
+        except Exception:
+            return False
+
+    # Legacy in-memory fallback
+    session = ACTIVE_SESSIONS.get(clean)
+    if session and session.get("expires", 0) > time.time():
+        if required_type and session.get("type") != required_type:
+            return False
+        return True
+    return False
+
 
 def get_admin_credentials() -> tuple[str, str, str]:
     """
@@ -458,13 +654,7 @@ def verify_admin_login(username, password):
     # 1. Check primary Admin credentials from .env
     env_u, env_p, env_name = get_admin_credentials()
     if env_u and env_p and u_clean == env_u.lower() and p_clean == env_p:
-        token = secrets.token_hex(24)
-        ACTIVE_SESSIONS[token] = {
-            "type": "admin",
-            "username": env_u,
-            "name": env_name,
-            "expires": time.time() + (7 * 86400)
-        }
+        token = _issue_session_token("admin", env_u, env_name)
         return True, token, {"username": env_u, "name": env_name}
 
     # 2. Check optional additional sub-admins managed via Master Portal
@@ -472,13 +662,7 @@ def verify_admin_login(username, password):
     admins = cfg.get("admins", [])
     for adm in admins:
         if adm.get("username", "").strip().lower() == u_clean and adm.get("password", "") == p_clean:
-            token = secrets.token_hex(24)
-            ACTIVE_SESSIONS[token] = {
-                "type": "admin",
-                "username": adm.get("username"),
-                "name": adm.get("name"),
-                "expires": time.time() + (7 * 86400)
-            }
+            token = _issue_session_token("admin", adm.get("username"), adm.get("name"))
             return True, token, adm
 
     # 3. Allow Master Admin login into Admin Dashboard too
@@ -512,35 +696,18 @@ def verify_master_login(username, password):
         return False, None
 
     if u_clean == master_u.lower() and p_clean == master_p:
-        token = secrets.token_hex(24)
-        ACTIVE_SESSIONS[token] = {
-            "type": "master",
-            "username": u_clean,
-            "name": get_env_value("MASTER_DISPLAY_NAME", "Master Admin"),
-            "expires": time.time() + (7 * 86400)
-        }
+        disp = get_env_value("MASTER_DISPLAY_NAME", "Master Admin")
+        token = _issue_session_token("master", u_clean, disp)
         return True, token
     return False, None
 
 
 def is_valid_admin_token(token):
-    if not token:
-        return False
-    clean = token.replace("Bearer ", "").strip()
-    session = ACTIVE_SESSIONS.get(clean)
-    if session and session.get("expires", 0) > time.time():
-        return True
-    return False
+    return _verify_session_token(token, required_type=None)
 
 
 def is_valid_master_token(token):
-    if not token:
-        return False
-    clean = token.replace("Bearer ", "").strip()
-    session = ACTIVE_SESSIONS.get(clean)
-    if session and session.get("type") == "master" and session.get("expires", 0) > time.time():
-        return True
-    return False
+    return _verify_session_token(token, required_type="master")
 
 
 # =============================================================================
@@ -625,17 +792,13 @@ def delete_admin_account(admin_id):
 
 
 # =============================================================================
-# REQUESTS PERSISTENCE & DATE FILTERING WITH CLOUD SYNC
+# REQUESTS PERSISTENCE & DATE FILTERING WITH LOSSLESS CLOUD MERGE
 # =============================================================================
 
-def load_all_requests(date_filter=None):
-    """Loads all requests, optionally filtered by date (e.g. '2026-11-25')."""
+def load_all_requests(date_filter=None, sync_cloud: bool = False):
+    """Loads all requests with cloud merge sync, optionally filtered by date (e.g. '2026-11-28')."""
     init_storage()
-    try:
-        with open(REQUESTS_FILE, "r", encoding="utf-8") as f:
-            all_reqs = json.load(f)
-    except Exception:
-        all_reqs = []
+    all_reqs = _sync_requests_from_cloud(force=sync_cloud)
 
     if not date_filter or date_filter.strip().lower() in ("all", ""):
         return all_reqs
@@ -650,12 +813,45 @@ def load_all_requests(date_filter=None):
     return filtered
 
 
-def save_all_requests(req_list):
+def save_all_requests(req_list, sync_mode: bool = True):
+    """Merges with cloud and persists requests cleanly to both disk and GitHub cloud."""
+    global _LAST_REQ_SYNC_TS
     init_storage()
-    with open(REQUESTS_FILE, "w", encoding="utf-8") as f:
-        json.dump(req_list, f, indent=2, ensure_ascii=False)
-    # Sync to GitHub data-store branch in background
-    async_cloud_push("requests.json", req_list, "Update approval requests store")
+    with _STORAGE_LOCK:
+        cloud_reqs = github_pull_cloud_file("requests.json")
+        merged = _merge_requests_lists(req_list, cloud_reqs if isinstance(cloud_reqs, list) else [])
+        with open(REQUESTS_FILE, "w", encoding="utf-8") as f:
+            json.dump(merged, f, indent=2, ensure_ascii=False)
+        _LAST_REQ_SYNC_TS = time.time()
+        if sync_mode:
+            github_push_cloud_file("requests.json", merged, "Update approval requests store")
+        else:
+            async_cloud_push("requests.json", merged, "Update approval requests store")
+
+
+def _mutate_requests(mutator_fn, commit_msg: str):
+    """
+    Atomically pulls & merges latest cloud requests, applies mutator_fn(requests_list),
+    saves locally, and pushes synchronously to GitHub cloud inside _STORAGE_LOCK.
+    Prevents historical request data loss on Render restarts or concurrent requests.
+    """
+    global _LAST_REQ_SYNC_TS
+    init_storage()
+    with _STORAGE_LOCK:
+        local_reqs = _read_local_json_list(REQUESTS_FILE)
+        cloud_reqs = github_pull_cloud_file("requests.json")
+        merged = _merge_requests_lists(local_reqs, cloud_reqs if isinstance(cloud_reqs, list) else [])
+
+        result = mutator_fn(merged)
+        merged.sort(key=lambda r: (str(r.get("created_at") or ""), str(r.get("id") or "")), reverse=True)
+
+        with open(REQUESTS_FILE, "w", encoding="utf-8") as f:
+            json.dump(merged, f, indent=2, ensure_ascii=False)
+        _LAST_REQ_SYNC_TS = time.time()
+
+        # Push synchronously to cloud so Render restart immediately after never loses this record
+        github_push_cloud_file("requests.json", merged, commit_msg)
+        return result
 
 
 def create_approval_request(
@@ -703,46 +899,66 @@ def create_approval_request(
         "preview_comparisons": stats.get("preview_comparisons", [])[:50]
     }
 
-    all_requests = load_all_requests(date_filter=None)
-    all_requests.insert(0, req_data)
-    save_all_requests(all_requests)
+    def _insert(reqs_list):
+        reqs_list.insert(0, req_data)
+        return req_data
+
+    _mutate_requests(_insert, f"Create approval request {req_id}")
+    # Also back up generated Excel to cloud so Admin/User can still download after Render sleeps
+    if excel_bytes:
+        async_cloud_push_bytes(f"files/{req_id}.xlsx", excel_bytes, f"Backup Excel for {req_id}")
     return req_data
 
 
 def get_request_by_id(req_id):
-    all_requests = load_all_requests(date_filter=None)
+    all_requests = load_all_requests(date_filter=None, sync_cloud=False)
     for r in all_requests:
-        if r["id"] == req_id:
+        if r.get("id") == req_id:
+            return r
+    # Fallback: force cloud refresh if not present locally yet
+    refreshed = load_all_requests(date_filter=None, sync_cloud=True)
+    for r in refreshed:
+        if r.get("id") == req_id:
             return r
     return None
 
 
 def approve_request(req_id):
-    all_requests = load_all_requests(date_filter=None)
-    for r in all_requests:
-        if r["id"] == req_id:
-            r["status"] = "APPROVED"
-            r["approved_at"] = get_current_ist_str()
-            save_all_requests(all_requests)
-            return True, r
-    return False, None
+    def _approve(reqs_list):
+        for r in reqs_list:
+            if r.get("id") == req_id:
+                r["status"] = "APPROVED"
+                r["approved_at"] = get_current_ist_str()
+                return True, r
+        return False, None
+    return _mutate_requests(_approve, f"Approve request {req_id}")
 
 
 def reject_request(req_id, reason="Timing mismatch or excessive break taken"):
-    all_requests = load_all_requests(date_filter=None)
-    for r in all_requests:
-        if r["id"] == req_id:
-            r["status"] = "REJECTED"
-            r["rejection_reason"] = reason or "Rejected by Admin"
-            save_all_requests(all_requests)
-            return True, r
-    return False, None
+    def _reject(reqs_list):
+        for r in reqs_list:
+            if r.get("id") == req_id:
+                r["status"] = "REJECTED"
+                r["rejection_reason"] = reason or "Rejected by Admin"
+                return True, r
+        return False, None
+    return _mutate_requests(_reject, f"Reject request {req_id}")
 
 
 def get_request_excel_path(req_id):
+    init_storage()
     file_path = FILES_DIR / f"{req_id}.xlsx"
     if file_path.exists():
         return file_path
+    # Restore from cloud backup if Render restarted or local cache expired
+    cloud_bytes = github_pull_raw_bytes(f"files/{req_id}.xlsx")
+    if cloud_bytes:
+        try:
+            with open(file_path, "wb") as f:
+                f.write(cloud_bytes)
+            return file_path
+        except Exception:
+            pass
     return None
 
 
